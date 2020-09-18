@@ -1,0 +1,63 @@
+### GENERATE NECESSARY FILES
+
+-create a new dir on the Bastion SSH Server.
+
+-generate one file per server with the rules formatted like this : [source-SRV source-IP dest-SRV dest-IP PORT]
+
+[sysadmin@bastion ~]# cat rules
+
+Server1	XX.XX.XXX.XXX	Server2 	10.XX.XX.XX	3000, 3333-3339
+Server1	XX.XX.XXX.XXX	Server2 	10.XX.XX.XX 3000, 3333-3339
+Server3	10.XXX.XX.XXX	Server2 	10.XX.XX.XX	22
+Server4	10.XX.XX.XX	    Server2 	10.XXX.XX.XX 22
+...
+
+[sysadmin@bastion ~]# cat list
+
+Server1
+Server2
+Server3
+Server4
+...
+
+### CLEAN SERVER FILES :
+
+remove space between ports :
+
+[sysadmin@bastion ~]# sed -i 's/\,\ /\,/g' *
+
+check and remove space in names if needed :
+
+[sysadmin@bastion ~]# sed -i 's/BigIP Ext Mrs/BigiP/g' *
+
+check and modify “-” to “:” for ranges to work :
+
+[sysadmin@bastion ~]# sed -i 's/3333\-3339/3333\:3339/g' *
+
+remove empty lines :
+
+[sysadmin@bastion ~]# sed -i '/^$/d' *
+
+### PARSE AND CREATE RULES
+
+[sysadmin@bastion ~]# cat parser.sh
+#!/bin/bash
+while read LINES; do
+case "$LINES" in
+  ${F_FILE}*)
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -d "$4" -m multiport --dports "$5}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -d "$4" --dport "$5}';;
+  *)
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -d "$4" -m state --state NEW -m multiport --dports "$5}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -d "$4" -m state --state NEW --dport "$5}';;
+esac
+done < $F_FILE
+
+Launch parser.sh to generate “server.rules” files :
+
+[sysadmin@bastion ~]# for i in $(cat list); do export F_FILE="$i" && ./parser.sh > ${i}.rules ; done
+
+Show the parsed rules for each server :
+
+[sysadmin@bastion ~]# for i in $(cat list); do echo "######## IpTables script for $i #######" && cat ${i}.rules && echo; done
+
