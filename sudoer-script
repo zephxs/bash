@@ -1,0 +1,1 @@
+grep userx /etc/sudoers|grep xxxbin || echo 'userx ALL=NOPASSWD:/usr/local/bin/xxxbin' | (EDITOR="tee -a" visudo)
