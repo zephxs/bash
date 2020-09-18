@@ -24,7 +24,7 @@ echo "# Search for scanner in nginx logs..."
 > $XBAN
 
 cat /var/log/nginx/access.log | egrep -i 'masscan|CensysInspect|status|bot|nessus|netcraft|admin' |grep -v "127.0.0.1"  | grep -oE "\b([0-9]{1,3}.){3}[0-9]{1,3}\b" > $XTMP
-cat /var/log/nginx/bitwarden.access.log | egrep -i 'masscan|CensysInspect|status|bot|nessus|netcraft|admin' | grep -v "127.0.0.1"  | grep -oE "\b([0-9]{1,3}.){3}[0-9]{1,3}\b" >> $XTMP
+
 echo
 sed -i "/^3/d" $XTMP 
 sed -i "/^200 /d" $XTMP 
@@ -49,20 +49,12 @@ blacklist-check $i > /dev/null 2>&1 || ipset add manual-blacklist $i
 done
 echo
 echo "# Check protected 'nomatch' IP"
-if ipset list manual-blacklist |grep 77.201.41.208|grep nomatch; then 
-echo "Bob IP already has nomatch"
-elif ipset list manual-blacklist |grep 77.201.41.208; then
-ipset del manual-blacklist 77.201.41.208
-ipset add manual-blacklist 77.201.41.208 nomatch
-echo "Bob IP added to protection"
-fi
-echo
-if ipset list manual-blacklist |grep 109.208.228.209|grep nomatch; then 
-echo "ORG IP already has nomatch"
-elif ipset list manual-blacklist |grep 109.208.228.209; then
-ipset del manual-blacklist 109.208.228.209
-ipset add manual-blacklist 109.208.228.209 nomatch
-echo "ORG IP already has nomatch"
+if ipset list manual-blacklist |grep YOURIPHERE|grep nomatch; then 
+echo "your IP already has nomatch"
+elif ipset list manual-blacklist |grep YOURIPHERE; then
+ipset del manual-blacklist YOURIPHERE
+ipset add manual-blacklist YOURIPHERE nomatch
+echo "your IP added to protection"
 fi
 
 echo
