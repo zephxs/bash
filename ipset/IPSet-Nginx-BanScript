@@ -1,0 +1,65 @@
+#!/bin/bash
+echo "##################################"
+echo "IPSet Nginx BanScript"
+echo "##################################"
+
+##### NEEDS blacklist-check (verify an IP is not blacklisted by IPSET) script to work properly
+
+XTMP=$(mktemp /root/blacklist/nginx-tmp1-XXX)
+XTMP2=$(mktemp /root/blacklist/nginx-tmp2-XXX)
+XLIST='/root/blacklist/nginx-ban-list'
+XBAN='/root/blacklist/nginx-ban-ips'
+YOURIPHERE='PUT_YOUR_WAN_IP_HERE'
+
+echo
+echo "# Search for scanner in nginx logs..."
+# backup and cleanup existing IP lists
+cp $XLIST{,-$(date "+%Y-%m-%d")}
+> $XLIST
+cp $XBAN{,-$(date "+%Y-%m-%d")}
+> $XBAN
+
+### detect common scanner and network tools
+cat /var/log/nginx/access.log|egrep -i 'masscan|CensysInspect|status|bot|nessus|netcraft|admin'|grep -v "127.0.0.1"|grep -oE "\b([0-9]{1,3}.){3}[0-9]{1,3}\b" >$XTMP
+echo
+sed -i "/^3/d" $XTMP 
+sed -i "/^200 /d" $XTMP 
+sed -i "/^400 /d" $XTMP 
+sed -i "/^404 /d" $XTMP 
+sed -i "/^2010/d" $XTMP 
+sed -i "/^2019/d" $XTMP 
+sed -i "/^2020/d" $XTMP 
+sort $XTMP | uniq -u > $XTMP2 && rm -f $XTMP
+
+echo "# Check for IP address in detected logs..."
+#sort -u < $XTMP2 | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?$" > $XBAN
+for ip in $(cat "$XTMP2"); do
+if [ ! $(echo "$ip" | tr '.' ' ' | wc -w) -ne 4 ] ; then
+echo "$ip" >> $XLIST
+fi
+done
+rm -f $XTMP2 && sort $XLIST | uniq -u > $XBAN
+echo
+echo "# ... $(cat $XBAN|wc -l) IPs Found"
+echo
+echo "# Check and add if not already Blacklisted... (need blacklist-check script in path)"
+if ! command -v blacklist-check &> /dev/null; then echo "blacklist-check could not be found"
+else
+for i in $(cat "$XBAN"); do 
+blacklist-check $i > /dev/null 2>&1 || ipset add manual-blacklist $i
+done
+fi
+echo
+echo "# Check and protect $YOURIPHERE 'nomatch' IP"
+if ipset list manual-blacklist |grep $YOURIPHERE|grep nomatch; then 
+echo "your IP already has nomatch"
+elif ipset list manual-blacklist |grep $YOURIPHERE; then
+ipset del manual-blacklist $YOURIPHERE
+ipset add manual-blacklist $YOURIPHERE nomatch
+echo "your IP is added to protection"
+fi
+echo
+echo
+echo "#####################################"
+echo "$(ipset list manual-blacklist|wc -l) IPs now Blacklisted by IPSet"
+echo "#####################################"
