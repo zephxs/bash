@@ -1,6 +1,12 @@
 #!/bin/bash
 
 IP1=$1
+
+# find all blacklist set in IPSET and write them in a text file
+ipset list -terse|grep Name|grep -v white|awk '{print $2}' >/root/blacklist/ipset-list
+
+# validate that test string is an IP
+# Credits :  https://github.com/marios-zindilis/Scripts/blob/master/Bash/is_ip.sh
 function is_IP() {
 if [ $(echo "$1" | grep -o '\.' | wc -l) -ne 3 ]; then
  echo "'$1' does not look like an IP Address (does not contain 3 dots).";
@@ -30,6 +36,7 @@ fi
 return 0;
 }
 
+# Search for IP address in every blacklist configured in IPSET and exit 1 for scripts
 if is_IP "$IP1"; then
  for i in $(cat /root/blacklist/ipset-list); do 
   ipset test $i $IP1 && exit 0 || exit 1
