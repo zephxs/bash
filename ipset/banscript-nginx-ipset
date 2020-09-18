@@ -1,0 +1,72 @@
+#!/bin/bash
+echo "##################################"
+echo "IPSet Nginx BanScript by zef v2.4"
+echo "##################################"
+XTMP='/root/blacklist/nginx-ban-tmp'
+XTMP2='/root/blacklist/nginx-ban-tmp2'
+XLIST='/root/blacklist/nginx-ban-list'
+XBAN='/root/blacklist/nginx-ban-ips'
+echo
+function is_IP() {
+XIP="$1"
+if [ $(echo "$XIP" | grep -o '\.' | wc -l) -ne 3 ] ; then
+:
+elif [ $(echo "$XIP" | tr '.' ' ' | wc -w) -ne 4 ] ; then
+:
+else
+echo "$XIP" >> $XLIST
+fi
+}
+echo "# Search for scanner in nginx logs..."
+> $XTMP
+> $XTMP2
+> $XLIST
+> $XBAN
+
+cat /var/log/nginx/access.log | egrep -i 'masscan|CensysInspect|status|bot|nessus|netcraft|admin' |grep -v "127.0.0.1"  | grep -oE "\b([0-9]{1,3}.){3}[0-9]{1,3}\b" > $XTMP
+cat /var/log/nginx/bitwarden.access.log | egrep -i 'masscan|CensysInspect|status|bot|nessus|netcraft|admin' | grep -v "127.0.0.1"  | grep -oE "\b([0-9]{1,3}.){3}[0-9]{1,3}\b" >> $XTMP
+echo
+sed -i "/^3/d" $XTMP 
+sed -i "/^200 /d" $XTMP 
+sed -i "/^400 /d" $XTMP 
+sed -i "/^404 /d" $XTMP 
+sed -i "/^2010/d" $XTMP 
+sed -i "/^2019/d" $XTMP 
+sed -i "/^2020/d" $XTMP 
+sort $XTMP | uniq -u > $XTMP2
+echo "# Check for IP address in detected logs..."
+#sort -u < $XTMP2 | egrep "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?$" > $XBAN
+for ip in $(cat "$XTMP2"); do
+is_IP $ip
+done
+sort $XLIST | uniq -u > $XBAN
+echo
+echo "# ... $(cat $XBAN|wc -l) IPs Found"
+echo
+echo "# Check and add if not already Blacklisted..."
+for i in $(cat "$XBAN"); do 
+blacklist-check $i > /dev/null 2>&1 || ipset add manual-blacklist $i
+done
+echo
+echo "# Check protected 'nomatch' IP"
+if ipset list manual-blacklist |grep 77.201.41.208|grep nomatch; then 
+echo "Bob IP already has nomatch"
+elif ipset list manual-blacklist |grep 77.201.41.208; then
+ipset del manual-blacklist 77.201.41.208
+ipset add manual-blacklist 77.201.41.208 nomatch
+echo "Bob IP added to protection"
+fi
+echo
+if ipset list manual-blacklist |grep 109.208.228.209|grep nomatch; then 
+echo "ORG IP already has nomatch"
+elif ipset list manual-blacklist |grep 109.208.228.209; then
+ipset del manual-blacklist 109.208.228.209
+ipset add manual-blacklist 109.208.228.209 nomatch
+echo "ORG IP already has nomatch"
+fi
+
+echo
+echo "#####################################"
+echo "$(ipset list manual-blacklist|wc -l) IPs now Blacklisted by IPSet"
+echo "#####################################"
+

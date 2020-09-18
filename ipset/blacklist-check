@@ -1,0 +1,40 @@
+#!/bin/bash
+
+IP1=$1
+function is_IP() {
+if [ $(echo "$1" | grep -o '\.' | wc -l) -ne 3 ]; then
+ echo "'$1' does not look like an IP Address (does not contain 3 dots).";
+ echo "### Usage ###"
+ echo "$(basename $0) ip.ad.dr.es"
+ exit 1;
+elif [ $(echo "$1" | tr '.' ' ' | wc -w) -ne 4 ]; then
+ echo "'$1' does not look like an IP Address (does not contain 4 octets).";
+ echo "### Usage ###"
+ echo "$(basename $0) ip.ad.dr.es"
+ exit 1;
+else
+for OCTET in $(echo $1 | tr '.' ' '); do
+if ! [[ "$OCTET" =~ ^[0-9]+$ ]]; then
+ echo "'$1' is not an IP Address (octet '$OCTET' is not numeric).";
+ echo "### Usage ###"
+ echo "$(basename $0) ip.ad.dr.es"
+ exit 1;
+elif [[ "$OCTET" -lt 0 || "$OCTET" -gt 255 ]]; then
+ echo "'$1' is not an IP Address (octet '$OCTET' in not in range 0-255).";
+ echo "### Usage ###"
+ echo "$(basename $0) ip.ad.dr.es"
+ exit 1;
+fi
+done
+fi
+return 0;
+}
+
+if is_IP "$IP1"; then
+ for i in $(cat /root/blacklist/ipset-list); do 
+  ipset test $i $IP1 && exit 0 || exit 1
+ done
+else
+ echo "### Usage ###"
+ echo "$(basename $0) ip.ad.dr.es"
+fi
