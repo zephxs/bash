@@ -9,7 +9,7 @@ XTMP=$(mktemp /root/blacklist/nginx-tmp1-XXX)
 XTMP2=$(mktemp /root/blacklist/nginx-tmp2-XXX)
 XLIST='/root/blacklist/nginx-ban-list'
 XBAN='/root/blacklist/nginx-ban-ips'
-YOURIPHERE="77.201.41.208 109.208.228.209"
+YOURIPHERE="PUT Your IPs here Space separated"
 
 echo
 echo "# Search for scanner in nginx logs..."
