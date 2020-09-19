@@ -39,7 +39,7 @@ return 0;
 # Search for IP address in every blacklist configured in IPSET and exit 0 for scripts
 if is_IP "$IP1"; then
  for i in $(cat /root/blacklist/ipset-list); do 
-  ipset test $i $IP1 & exit 0
+  ipset test $i $IP1 && exit 0
  done
 else
  echo "### Usage ###"
