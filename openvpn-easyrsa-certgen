@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# script color
+_BLX="echo -e \e[36m"
+_NLMX="echo -e \e[39m"
+_RDX="echo -e \e[5m \e[95m"
+
+# vars
+_CFDIR='/root/CONF/OPENVPN'
+_ESDIR='/etc/openvpn/easy-rsa/3.0.3'
+_VARS='put_easy-rsa_CA_vars_location_here'
+_SRV='put_server_IP_here'
+_PORT='put_server_port_here'
+
+$_BLX
+echo "Create OpenVPN user for: "
+echo "OPENVPN SERVER"
+echo
+echo "Enter UserName :"
+read -p ">_ " _USR1
+$_NLMX
+mkdir -p ${_CFDIR}/openvpn-client
+cd $_ESDIR
+source $_VARS
+$_RDX
+echo "Generate Certificate for $_USR1"
+$_NLMX
+# read your distibution easy-rsa manual to gen cert properly (Here we create a .p12 cert)
+./easyrsa build-client-full $_USR1
+./easyrsa export-p12 $_USR1
+echo
+$_RDX
+echo "Generation Complete!"
+echo
+$_BLX
+echo "Generate conf and zip necessary files in $_CFDIR"
+$_NLMX
+cd ${_CFDIR}/openvpn-client
+# here is the client conf file 
+cat > ${_USR1}.conf <<EOF
+client
+dev tun
+proto udp
+remote ${_SRV} ${_PORT}
+pkcs12 ${_USR1}.p12
+#askpass v
+tls-crypt ta.key
+cipher AES-256-CBC
+auth SHA512
+auth-nocache
+tls-version-min 1.2
+tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256:TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:TLS-DHE-RSA-WITH-AES-128-CBC-SHA256
+remote-cert-tls server
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+mute-replay-warnings
+verb 3
+#Split tunnel option
+--pull-filter ignore redirect-gateway
+EOF
+cp ${_ESDIR}/pki/private/${_USR1}.p12 ${_ESDIR}/pki/ta.key .
+zip ${_CFDIR}/${_USR1}.zip *
+cd ${_CFDIR}
+echo "remove tmp files"
+shred -zvu openvpn-client/*
+rm -rf openvpn-client
+$_RDX
+echo
+echo "Generation Complete!"
+echo "zip file : ${_CFDIR}/${_USR1}.zip"
+
