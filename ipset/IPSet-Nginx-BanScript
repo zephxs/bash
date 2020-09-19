@@ -9,7 +9,7 @@ XTMP=$(mktemp /root/blacklist/nginx-tmp1-XXX)
 XTMP2=$(mktemp /root/blacklist/nginx-tmp2-XXX)
 XLIST='/root/blacklist/nginx-ban-list'
 XBAN='/root/blacklist/nginx-ban-ips'
-YOURIPHERE='PUT_YOUR_WAN_IP_HERE'
+YOURIPHERE="77.201.41.208 109.208.228.209"
 
 echo
 echo "# Search for scanner in nginx logs..."
@@ -51,13 +51,15 @@ done
 fi
 echo
 echo "# Check and protect $YOURIPHERE 'nomatch' IP"
-if ipset list manual-blacklist |grep $YOURIPHERE|grep nomatch; then 
+for YIP in $YOURIPHERE; do
+if ipset list manual-blacklist |grep $YIP|grep nomatch; then 
 echo "your IP already has nomatch"
-elif ipset list manual-blacklist |grep $YOURIPHERE; then
-ipset del manual-blacklist $YOURIPHERE
-ipset add manual-blacklist $YOURIPHERE nomatch
-echo "your IP is added to protection"
+elif ipset list manual-blacklist |grep $YIP; then
+ipset del manual-blacklist $YIP
+ipset add manual-blacklist $YIP nomatch
+echo "your IP $YIP is added to protection"
 fi
+done
 echo
 echo
 echo "#####################################"
