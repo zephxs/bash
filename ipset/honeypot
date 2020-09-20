@@ -1,0 +1,6 @@
+#!/bin/bash
+
+while true; do
+#ncat -vl --keep-open 22 --exec /usr/local/bin/honeyban &>> /root/blacklist/hony.log 
+ncat -vl --keep-open 22 --exec "/usr/local/bin/honeyban" &>> /root/blacklist/hony.log 
+done
