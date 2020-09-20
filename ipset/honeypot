@@ -1,6 +1,8 @@
 #!/bin/bash
 
+# open ncat listener on port 22
+# execute honeyban script when IP is knocking
+
 while true; do
-#ncat -vl --keep-open 22 --exec /usr/local/bin/honeyban &>> /root/blacklist/hony.log 
 ncat -vl --keep-open 22 --exec "/usr/local/bin/honeyban" &>> /root/blacklist/hony.log 
 done
