@@ -4,5 +4,5 @@
 # execute honeyban script when IP is knocking
 
 while true; do
-ncat -vl --keep-open 22 --exec "/usr/local/bin/honeyban" &>> /root/blacklist/hony.log 
+ncat -vl --keep-open 22 --exec "/usr/local/bin/honeypot-banscript" &>> /root/blacklist/honeypot.log 
 done
