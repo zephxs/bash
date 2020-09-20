@@ -4,7 +4,7 @@ After=network.target syslog.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/HONY
+ExecStart=/usr/local/bin/ncat-honeypot
 RemainAfterExit=true
 ExecStop=/usr/local/bin/killhony
 #StandardOutput=journal
