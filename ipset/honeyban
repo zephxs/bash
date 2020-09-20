@@ -1,0 +1,15 @@
+#!/bin/bash
+
+_XLOG="/root/blacklist/hony.log"
+_XPOR="/root/blacklist/horny-banlist"
+_TMP1=$(mktemp /root/blacklist/.hotmp1.XXX)
+_TMP2=$(mktemp /root/blacklist/.hotmp2.XXX)
+
+cat "$_XLOG"|grep from > "$_TMP1"
+sed -i 's/Ncat\://g' "$_TMP1"
+cat "$_TMP1"|grep ':'|awk '{print $3}'|awk -F':' '{print $1}'|uniq > "$_TMP2"
+
+for i in $(cat "$_TMP2"); do
+blacklist-check $i > /dev/null 2>&1 || ipset add hony "$i" && echo "$i" >> "$_XPOR"
+#blacklist-check $i > /dev/null 2>&1 || echo "ipset add manual-blacklist $i" >> "$_XPOR"
+done
