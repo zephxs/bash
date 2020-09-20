@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_XLOG="/root/blacklist/hony.log"
+_XLOG="/root/blacklist/honeypot.log"
 _XPOR="/root/blacklist/horny-banlist"
 _TMP1=$(mktemp /root/blacklist/.hotmp1.XXX)
 _TMP2=$(mktemp /root/blacklist/.hotmp2.XXX)
