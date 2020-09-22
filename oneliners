@@ -1,0 +1,191 @@
+#!/bin/bash
+
+alias wiki="dig +short txt "$1".wp.dg.cx"
+alias site-dl="wget --random-wait -r -p -e robots=off -U mozilla http://www.example.com"
+alias simtyping="echo 'You can simulate on-screen typing just like in the movies' | pv -qL 10"
+alias mkadir="mkdir "$1" && cd $_"
+alias numright="stat -c '%A %a %n' *"
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+
+# colorizing man
+apt-get install most && update-alternatives --set pager /usr/bin/most
+
+#unix time convertion
+date -d @1234567890
+
+# dmesg with human colored date
+dmesg -T|sed -e 's|\(^.*'`date +%Y`']\)\(.*\)|\x1b[0;34m\1\x1b[0m - \2|g'
+
+# diagram of user/group
+awk 'BEGIN{FS=":"; print "digraph{"}{split($4, a, ","); for (i in a) printf "\"%s\" \n\"%s\" -> \"%s\"\n", $1, a[i], $1}END{print "}"}' /etc/group
+
+#diff over ssh
+ssh user@host cat /path/to/remotefile | diff /path/to/localfile -
+
+# top ten ps by usage
+ps aux | sort -nk +4 | tail
+
+# quick rename
+mv filename.{old,new}
+# or backup
+cp file.txt{,.bak}
+
+
+# network activity
+lsof -i
+# for apps
+lsof -P -i -n
+#or
+lsof -P -i -n | cut -f 1 -d " "| uniq | tail -n +2
+#or
+ss -p
+
+# opened port fid  prpgrm
+lsof -i tcp:80
+lsof -Pni4 | grep LISTEN
+
+# analyse traffic throigh ssh
+ssh root@server.com 'tshark -f "port !22" -w -' | wireshark -k -i -
+
+# discover brute force attempts
+sudo zcat /var/log/auth.log.*.gz | awk '/Failed password/&&!/for invalid user/{a[$9]++}/Failed password for invalid user/{a["*" $11]++}END{for (i in a) printf "%6s\t%s\n", a[i], i|"sort -n"}'
+
+# Apache logs analyze most common ip
+tail -10000 access_log | awk '{print $1}' | sort | uniq -c | sort -n | tail
+
+# list alive host
+nmap -sP 192.168.1.0/24
+
+# display IP communicating with interface
+sudo tcpdump -i wlan0 -n ip | awk '{ print gensub(/(.*)\..*/,"\\1","g",$3), $4, gensub(/(.*)\..*/,"\\1","g",$5) }' | awk -F " > " '{print $1"\n"$2}'
+
+#list conn
+netstat -ant | awk '{print $NF}' | grep -v '[a-z]' | sort | uniq -c
+
+# list ip connected to my host
+netstat -lantp | grep ESTABLISHED |awk '{print $5}' | awk -F: '{print $1}' | sort -u
+
+
+# git remove deleted files
+git rm $(git ls-files --deleted)
+
+# close hanged ssh session
+~.
+
+
+# recursive search and replace in files
+$ grep -rl oldstring . |xargs sed -i -e 's/oldstring/newstring/'
+
+# rename .jpeg and .JPG to .jpg
+rename 's/\.jpe?g$/.jpg/i' *
+
+# remove Thumbs.db frome folders
+find ./ -name Thumbs.db -delete
+
+# remove Samples dirs
+find ./ -iname "Sample*" -type d -exec rm -rfv {} +
+
+# recursive compare dirs
+diff -urp /originaldirectory /modifieddirectory
+
+# list dirs by size
+du -h /path | sort -h
+
+# mkcd
+md () { mkdir -p "$@" && cd "$@"; }
+
+
+# MYSQQL
+# copy db trough ssh
+mysqldump --add-drop-table --extended-insert --force --log-error=error.log -uUSER -pPASS OLD_DB_NAME | ssh -C user@newhost "mysql -uUSER -pPASS NEW_DB_NAME"
+
+
+
+# find dupes
+find -not -empty -type f -printf "%s\n" | sort -rn | uniq -d | xargs -I{} -n1 find -type f -size {}c -print0 | xargs -0 md5sum | sort | uniq -w32 --all-repeated=separate
+
+# strace with pid
+strace -ff -e trace=write -e write=1,2 -p SOME_PID
+
+# cp with pv
+pv source > dest
+
+# subdir tree
+ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+
+# make folder tree
+mkdir -p work/{d1,d2}/{src,bin,bak}
+
+# compare dir trees
+diff <(cd dir1 && find | sort) <(cd dir2 && find | sort)
+
+
+# vim over ssh
+vim scp://username@host//path/to/somefile
+
+# monitor process of command
+pv access.log | gzip > access.log.gz
+
+# convert seconds to human readable
+date -d@1234567890
+
+# remove pdf security limitation with ghostscript
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=OUTPUT.pdf -c .setpdfwrite -f INPUT.pdf
+
+# processor memory bandwidth in gb/s
+dd if=/dev/zero of=/dev/null bs=1M count=32768
+
+# copy file rights from one to another
+chmod --reference file1 file2
+
+# ps full
+ps awwfux | less -S
+
+# list bash shortcuts
+bind -P
+
+# remove all empty dir recurssive
+find . -type d -empty -delete
+
+# system state
+diff <(lsof -p 1234) <(sleep 10; lsof -p 1234)
+
+# weather
+curl wttr.in/seville
+
+# download all image from website 
+wget -r -l1 --no-parent -nH -nd -P/tmp -A".gif,.jpg" http://example.com/images
+
+# download html page and convert to pdf
+wget $URL | htmldoc --webpage -f "$URL".pdf - ; xpdf "$URL".pdf &
+
+# ip blacklist
+wget -qO - http://infiltrated.net/blacklisted|awk '!/#|[a-z]/&&/./{print "iptables -A INPUT -s "$1" -j DROP"}'
+
+
+
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""
+alias =""

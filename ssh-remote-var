@@ -1,0 +1,5 @@
+#local:
+ts="command"
+
+#remote:
+ssh host "env ts=$ts ./script.sh"
