@@ -51,7 +51,7 @@ done
 fi
 echo
 echo "# Check and protect $YOURIPHERE 'nomatch' IP"
-for YIP in $YOURIPHERE; do
+for YIP in $(echo $YOURIPHERE); do
 if ipset list manual-blacklist |grep $YIP|grep nomatch; then 
 echo "your IP already has nomatch"
 elif ipset list manual-blacklist |grep $YIP; then
