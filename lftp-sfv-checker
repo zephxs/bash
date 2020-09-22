@@ -1,0 +1,49 @@
+#!/bin/bash
+
+LOGPATH='/media/usbdisk/list/logs'
+LOGX='/media/usbdisk/list/logs/dlprep'
+LOGX2='/media/usbdisk/list/logs/reprep'
+SRCPATH="/media/usbdisk/Videos/ /media/usbdisk/DL/"
+
+cd $LOGPATH
+find $SRCPATH -type f -name "*.sfv" > allsfv
+for z in $(cat allsfv); do
+  zl="${z}.log"
+  if [ ! -e "$zl" ]; then
+  cd $(dirname $z)
+  cksfv -f *.sfv 2>&1 | tee -a $zl
+  fi
+done
+
+find $SRCPATH -type f -name *.sfv.log -exec grep -EHRns 'CRC|No' {} + > ${LOGPATH}/err.log
+for i in $(cat ${LOGPATH}/err.log|awk -F: '{print $1}'); do
+  xdir=$(dirname $i)
+  cd $xdir
+  egrep 'CRC|No ' *.sfv.log|awk '{print $1}' > .badcrc
+    if [ -s ".badcrc"  ]; then
+    cat >> $LOGX2 <<EOF
+lcd $xdir
+EOF
+    STRX=$(cat .badcrc|awk -F. '{print $1"."$2}')
+    grep -i "$(echo $STRX)" ${LOGX}* |awk '{print $3}' > .tmp
+    cat >> $LOGX2 <<EOF
+get $(cat .tmp)/$(cat .badcrc)
+EOF
+    rm .tmp
+    rm *.sfv.log
+    rm $(cat .badcrc)
+    rm .badcrc
+  fi
+done
+
+if [ -s "$LOGX2" ]; then
+echo "bye" >> "${LOGX2}"
+lftp yourserver -e "source ${LOGX2};"
+fi
+cat >> ${LOGX2}.log <<EOF
+
+$(date +"%H%M-%d-%b-%y")
+EOF
+cat ${LOGX2} >> ${LOGX2}.log
+> $LOGX2
+
