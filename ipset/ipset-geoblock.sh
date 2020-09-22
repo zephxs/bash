@@ -39,5 +39,5 @@ do
 # ban everything - block countryX
 ipset -A geoblock $IP
 done
-ipset save -f /root/blacklist/ipset-geoblock.conf
+ipset save geoblock -f /root/blacklist/ipset-geoblock.list
 # validate ipset with : iptables -I INPUT -m set --match-set geoblock src -j DROP
