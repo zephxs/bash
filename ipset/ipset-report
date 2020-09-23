@@ -1,0 +1,24 @@
+#!/bin/bash
+
+_TMP=$(mktemp /tmp/.fireshXXX)
+# show list :
+echo "#######################################"
+echo "####### configured ipset lists: #######"
+for i in $(ipset list -terse |grep Name|awk '{print $2}'); do
+echo "#######################################"
+echo "### IPSet list : $i"
+echo "### - $(ipset list $i|wc -l) IP/subnets blocked"
+echo "### - rejected traffic:"
+iptables -nvL blocklists|grep $i > $_TMP
+echo "# >source"
+cat $_TMP|grep src|awk '{print "-Packets: "$1"   -Bytes: "$2}'
+echo "# >dest"
+cat $_TMP|grep dst|awk '{print "-Packets: "$1"   -Bytes: "$2}'
+echo
+done
+echo "#######################################"
+echo "### Blocklists chain global drop :"
+echo
+for i in INPUT OUTPUT FORWARD; do iptables -nvL $i --line-n|grep -B 2 blocklists ; done
+echo "#######################################"
+
