@@ -1,4 +1,7 @@
 #!/bin/bash
+# crédits goes to 
+https://gist.github.com/mtompkins/f43ef38f2b3a7263650d212e49e8a498
+# for original script
 
 # NOTE Comma at end of each string . . .
 COUNTRIES_A="al,ad,af,ai,ag,al,am,ao,ar,ax,az,"
