@@ -21,4 +21,9 @@ echo "### Blocklists chain global drop :"
 echo
 for i in INPUT OUTPUT FORWARD; do iptables -nvL $i --line-n|grep -B 2 blocklists ; done
 echo "#######################################"
-
+echo "### blocked ip the last days :"
+for i in 7 6 5 4 3 2 1 0; do
+_XDATE=$(date +"%d-%m" --date="$i days ago")
+echo "- $i days ago: $(cat /root/blacklist/horny-banlist|grep $_XDATE|wc -l) IP addess blocked"
+done
+echo "#######################################"
