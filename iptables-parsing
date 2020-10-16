@@ -61,3 +61,21 @@ Show the parsed rules for each server :
 
 [sysadmin@bastion ~]# for i in $(cat list); do echo "######## IpTables script for $i #######" && cat ${i}.rules && echo; done
 
+
+### CREATE A SCRIPT FOR EACH SERVER TO CHECK INSTALLED RULES
+
+[sysadmin@bastion ~]# cat gen-checker.sh
+
+for i in $(cat list); do 
+cat > ${i}.sh <<EOF
+cat > /tmp/iptchkrules <<EOF
+EOF
+cat ${i}.rules >> ${i}.sh
+echo 'EOF' >> ${i}.sh
+cat >> ${i}.sh <<EOF
+echo "### Test installed rules :"
+while read _RULE; do iptables -nvL \$(echo \$_RULE |awk '{print \$2}') | grep \$(echo \$_RULE |awk -F'-s ' '{print \$2}'|awk '{print \$1}') | grep \$(echo \$_RULE |awk -F'-d ' '{print \$2}'|awk '{print \$1}') | grep \$(echo \$_RULE |awk '{print \$NF}') || echo "RULE: \"\$_RULE\" ### NOT FOUND ###" ; echo; done < "/tmp/iptchkrules"
+rm -f /tmp/iptchkrules
+EOF
+done
+
