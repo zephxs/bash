@@ -166,6 +166,7 @@ wget $URL | htmldoc --webpage -f "$URL".pdf - ; xpdf "$URL".pdf &
 # ip blacklist
 wget -qO - http://infiltrated.net/blacklisted|awk '!/#|[a-z]/&&/./{print "iptables -A INPUT -s "$1" -j DROP"}'
 
+PS1='\[\033[1;30m\][\[\033[1;34m\]\u\[\033[1;30m\]@\[\033[0;35m\]note9s\[\033[1;30m\]] \[\033[0;36m\]\w \[\033[1;30m\]\$\[\033[0m\]'
 
 
 alias =""
