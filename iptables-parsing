@@ -45,13 +45,58 @@ remove empty lines :
 while read LINES; do
 case "$LINES" in
   ${F_FILE}*)
-  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -d "$4" -m multiport --dports "$5}'
-  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -d "$4" --dport "$5}';;
+ if echo $LINES|grep -q udp; then
+  if echo $LINES|awk '{print $2}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p udp -m iprange --src-range "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p udp -m iprange --src-range "$2" -d "$4" --dport "$NF}'
+  elif echo $LINES|awk '{print $4}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p udp -s "$2" -m iprange –dst-range "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p udp -s "$2" -m iprange –dst-range "$4" --dport "$NF}'
+  else
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p udp -s "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p udp -s "$2" -d "$4" --dport "$NF}'
+  fi
+ else
+  if echo $LINES|awk '{print $2}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -m iprange --src-range "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -m iprange --src-range "$2" -d "$4" --dport "$NF}'
+  elif echo $LINES|awk '{print $4}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -m iprange –dst-range "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -m iprange –dst-range "$4" --dport "$NF}'
+  else
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_OUT -j ACCEPT -p tcp -s "$2" -d "$4" --dport "$NF}'
+  fi
+fi
+;;
   *)
-  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -d "$4" -m state --state NEW -m multiport --dports "$5}'
-  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -d "$4" -m state --state NEW --dport "$5}';;
+if echo $LINES|grep -q udp; then
+  if echo $LINES|awk '{print $2}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p udp -m iprange --src-range "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p udp -m iprange --src-range "$2" -d "$4" --dport "$NF}'
+  elif echo $LINES|awk '{print $4}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p udp -s "$2" -m iprange –dst-range "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p udp -s "$2" -m iprange –dst-range "$4" --dport "$NF}'
+  else
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p udp -s "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p udp -s "$2" -d "$4" --dport "$NF}'
+  fi
+else
+  if echo $LINES|awk '{print $2}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -m iprange --src-range "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -m iprange --src-range "$2" -d "$4" --dport "$NF}'
+  elif echo $LINES|awk '{print $4}'|grep -q '-'; then
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -m iprange –dst-range "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -m iprange –dst-range "$4" --dport "$NF}'
+  else
+  echo $LINES |grep ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -d "$4" -m multiport --dports "$NF}'
+  echo $LINES |grep -v ','|awk -F" " '{print "-A PROD_IN -j ACCEPT -p tcp -s "$2" -d "$4" --dport "$NF}'
+  fi
+fi
+;;
 esac
 done < $F_FILE
+
 
 Launch parser.sh to generate “server.rules” files :
 
