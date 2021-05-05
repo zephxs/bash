@@ -39,9 +39,9 @@ echo "### Postfix main.cf relayhost: $(grep relayhost /etc/postfix/main.cf |grep
 echo
 echo "####### REQUIRED #######"
 echo "### Users:"
-awk -F':' '$3>=1000 {print $1}' /etc/passwd |egrep -v 'statsys|zabbix|sriffault|ucmdb'
+awk -F':' '$3>=1000 {print $1}' /etc/passwd |egrep -v 'userx'
 echo "### Sudoers:"
-grep prod /etc/sudoers|grep nvL
+grep userz /etc/sudoers|grep iptables
 echo "### Apps:"
 yum -C list installed postgresql*-server
 echo
