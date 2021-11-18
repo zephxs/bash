@@ -127,15 +127,17 @@ _MYECHO "### Find Agent pid "
 $(_SSHPID) && _OK || _KO
 _MYECHO "### Remove Key "
 ssh-add -D && _OK || _KO
-_MYECHO "### Kill Agent "
-ssh-agent -k && _OK || _KO
-_MYECHO "### Kill Agent "
+ssh-agent -k && (_MYECHO "### Kill Agent " _OK) || _KO
+_MYECHO "### Remove Socket "
 rm -f $SSH_AUTH_SOCK && _OK || _KO
 _MAV "### Search remaining agent "
 for i in $(ps -u $(id -un)|grep ssh-agent|awk '{print $1}'); do
  ps aux -q $i
- read
- kill -9 $i
+    _RED "> kill PID ? [Y/n]"
+    read -s -n1
+    if [[ "$REPLY" =~ [Yy] ]]; then
+    kill -9 $i
+    fi
 done
 }
 sshagent-kill-old () {
