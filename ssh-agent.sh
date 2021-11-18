@@ -119,11 +119,29 @@ _CHKSSH
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
 
 _SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
-
 sshagent-kill () {
 export SSH_AGENT_PID=$(_SSHPID)
+_BLU "####################################################"
+_BLU "####### ssh-agent Killer"
+_MYECHO "### Find Agent pid "
+$(_SSHPID) && _OK || _KO
+_MYECHO "### Remove Key "
+ssh-add -D && _OK || _KO
+_MYECHO "### Kill Agent "
+ssh-agent -k && _OK || _KO
+_MYECHO "### Kill Agent "
+rm -f $SSH_AUTH_SOCK && _OK || _KO
+_MAV "### Search remaining agent "
+for i in $(ps -u $(id -un)|grep ssh-agent|awk '{print $1}'); do
+ ps aux -q $i
+ read
+ kill -9 $i
+done
+}
+sshagent-kill-old () {
+export SSH_AGENT_PID=$(_SSHPID)
 ssh-add -D; ssh-agent -k; rm -f $SSH_AUTH_SOCK
-for i in $(ps aux|grep ${SSH_AUTH_SOCK}|grep -v grep|awk '{print $2}'); do
+for i in $(ps -u $(id -un)|grep ssh-agent|grep -v grep|awk '{print $1}'); do
 kill -9 $i
 done
 }
