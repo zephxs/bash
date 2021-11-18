@@ -55,9 +55,11 @@ _MYECHO () {
 }
 
 
+
 ### SSH AGENT SESSION LOADER
 _CHKSSH () {
-# v1.3
+# v1.4
+
 # USER CHOICE
 # export fixed agent socket and default key to load with agent
 # set key life time in the agent when loading
@@ -65,13 +67,15 @@ export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
 
+
+
 # get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _RES=$? ; }
 _SSHAG
 while [ "$(echo $_RES)" -ge 1 ]; do
   case $_RES in
   2)
-    ssh-agent -a $SSH_AUTH_SOCK >/dev/null
+    ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
     echo
     _MYECHO "### Test SSH agent "
     sleep 1 && _SSHAG
@@ -100,16 +104,27 @@ while [ "$(echo $_RES)" -ge 1 ]; do
     ;;
   esac
 done
+echo
 _BLU "####################################################"
 _MYECHO "### Test SSH Agent "
 [ $_RES = 0 ] && _OK .Running || _KO
 _KEY=$(ssh-add -l|awk -F/ '{print $NF}'|awk '{print $1}')
 _MYECHO "### Loaded SSH keys " && _OK .${_KEY}
-#set alias to kill agent remove socket and exit
-alias x='ssh-add -D; rm -f $SSH_AUTH_SOCK && exit'
 echo
 echo
 }
 _CHKSSH
 
+
+# set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
+
+_SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
+
+sshagent-kill () {
+export SSH_AGENT_PID=$(_SSHPID)
+ssh-add -D; ssh-agent -k; rm -f $SSH_AUTH_SOCK
+for i in $(ps aux|grep ${SSH_AUTH_SOCK}|grep -v grep|awk '{print $2}'); do
+kill -9 $i
+done
+}
 
