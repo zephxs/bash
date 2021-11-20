@@ -4,7 +4,10 @@
 ### and color bash scheme 
 # used as .bash_profile 
 
-
+# scp protect from echo in .bashrc
+[ -z "$PS1" ] && return
+#or
+[ -t 0 ] || return
                                                            
 ### colors
 _REZ="\e[39m"
@@ -58,18 +61,14 @@ _MYECHO () {
 
 ### SSH AGENT SESSION LOADER
 _CHKSSH () {
-# v1.4
-
-# USER CHOICE
-# export fixed agent socket and default key to load with agent
-# set key life time in the agent when loading
+# v1.4 -
+# set fixed agent socket and default key to load
+# set key life time / empty for not setting lifetime
 export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
 
-
-
-# get agent status from ssh-add exit code
+# func to get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _RES=$? ; }
 _SSHAG
 while [ "$(echo $_RES)" -ge 1 ]; do
@@ -116,35 +115,39 @@ echo
 _CHKSSH
 
 
+
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
 
-_SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
 sshagent-kill () {
+# get pid from exported agent
+_SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
 export SSH_AGENT_PID=$(_SSHPID)
 _BLU "####################################################"
 _BLU "####### ssh-agent Killer"
-_MYECHO "### Find Agent pid "
-$(_SSHPID) && _OK || _KO
-_MYECHO "### Remove Key "
-ssh-add -D && _OK || _KO
-ssh-agent -k && (_MYECHO "### Kill Agent " _OK) || _KO
-_MYECHO "### Remove Socket "
-rm -f $SSH_AUTH_SOCK && _OK || _KO
+_MYECHO "> Find Agent pid "
+if ps aux |grep -q $SSH_AGENT_PID; then _OK; else _KO; fi
+_MAV "### Remove Key "
+ssh-add -D
+_MAV "### Kill Agent "
+ssh-agent -k
+# use shreder tool
+_MAV "### Remove Socket "
+#shred -zvu $SSH_AUTH_SOCK
+rm -f $SSH_AUTH_SOCK
 _MAV "### Search remaining agent "
-for i in $(ps -u $(id -un)|grep ssh-agent|awk '{print $1}'); do
- ps aux -q $i
-    _RED "> kill PID ? [Y/n]"
-    read -s -n1
-    if [[ "$REPLY" =~ [Yy] ]]; then
+for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
+  # stop here if root user
+  [ $(id -u) -eq 0 ] && return
+  # stop if pid not numeric
+  [ "$i" -eq "$i" ] || continue
+  _RED "/!\ Check if PID match user ssh agent:"
+  ps -p $i -F
+  _RED "> kill PID $i ? [Y/n]"
+  read -s -n1
+  if [[ "$REPLY" =~ [Yy] ]]; then
     kill -9 $i
-    fi
+  fi
 done
 }
-sshagent-kill-old () {
-export SSH_AGENT_PID=$(_SSHPID)
-ssh-add -D; ssh-agent -k; rm -f $SSH_AUTH_SOCK
-for i in $(ps -u $(id -un)|grep ssh-agent|grep -v grep|awk '{print $1}'); do
-kill -9 $i
-done
-}
+
 
