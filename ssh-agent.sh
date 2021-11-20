@@ -130,20 +130,21 @@ _MYECHO "### Remove Key "
 if ssh-add -D &>/dev/null; then _OK; else _KO; fi
 _MYECHO "### Kill Agent "
 if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
-if [ -e ${SSH_AUTH_SOCK} ]; then
-_MAV "### Remove Socket if still present "
+if [ -f ${SSH_AUTH_SOCK} ]; then
+_MYECHO "### Remove Socket if still present "
 if type shred &>/dev/null; then
-  shred -zvu $SSH_AUTH_SOCK
+  shred -zvu $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
 else
-  rm -f $SSH_AUTH_SOCK
+  rm -f $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
 fi
 fi
-_MAV "### Search remaining agent for user"
+if ps --user $(id -u) -F|grep -q ssh-agent; then
+_MAV "### Search remaining agent for $(id -un)"
 for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
-# stop here if root user 
+# stop here if root user
   [ $(id -u) -eq 0 ] && return
 # stop if pid not own by user
-  ps -p $i -F|grep ssh-agent|awk '{print $1}'|grep $(id -un) || return
+  ps -p $i -F|grep ssh-agent|awk '{print $1}'|grep $(id -un) || continue
 # stop if pid not numeric
   [ "$i" -eq "$i" ] || continue
   _RED "/!\ Check if PID match user ssh agent:"
@@ -154,7 +155,9 @@ for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
     kill -9 $i
   fi
 done
+fi
+#this one is just for style ;)
+_MYECHO "### Agent Cleanup " && _OK ".Done"
+echo
 }
-
-
 
