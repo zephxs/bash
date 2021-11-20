@@ -123,24 +123,28 @@ sshagent-kill () {
 _SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
 export SSH_AGENT_PID=$(_SSHPID)
 _BLU "####################################################"
-_BLU "####### ssh-agent Killer"
-_MYECHO "> Find defined Agent pid "
+_BLU "### [dont] Kill the ssh-agent !"
+_MYECHO "### Find Agent pid "
 if ps aux |grep -q $SSH_AGENT_PID; then _OK; else _KO; fi
-_MAV "### Remove Key "
-ssh-add -D
-_MAV "### Kill Agent "
-ssh-agent -k
-_MAV "### Remove Socket "
+_MYECHO "### Remove Key "
+if ssh-add -D &>/dev/null; then _OK; else _KO; fi
+_MYECHO "### Kill Agent "
+if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
+if [ -e ${SSH_AUTH_SOCK} ]; then
+_MAV "### Remove Socket if still present "
 if type shred &>/dev/null; then
   shred -zvu $SSH_AUTH_SOCK
 else
   rm -f $SSH_AUTH_SOCK
 fi
+fi
 _MAV "### Search remaining agent for user"
 for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
-  # stop here if root user
+# stop here if root user 
   [ $(id -u) -eq 0 ] && return
-  # stop if pid not numeric
+# stop if pid not own by user
+  ps -p $i -F|grep ssh-agent|awk '{print $1}'|grep $(id -un) || return
+# stop if pid not numeric
   [ "$i" -eq "$i" ] || continue
   _RED "/!\ Check if PID match user ssh agent:"
   ps -p $i -F
