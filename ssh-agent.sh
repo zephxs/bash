@@ -124,17 +124,19 @@ _SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
 export SSH_AGENT_PID=$(_SSHPID)
 _BLU "####################################################"
 _BLU "####### ssh-agent Killer"
-_MYECHO "> Find Agent pid "
+_MYECHO "> Find defined Agent pid "
 if ps aux |grep -q $SSH_AGENT_PID; then _OK; else _KO; fi
 _MAV "### Remove Key "
 ssh-add -D
 _MAV "### Kill Agent "
 ssh-agent -k
-# use shreder tool
 _MAV "### Remove Socket "
-#shred -zvu $SSH_AUTH_SOCK
-rm -f $SSH_AUTH_SOCK
-_MAV "### Search remaining agent "
+if type shred &>/dev/null; then
+  shred -zvu $SSH_AUTH_SOCK
+else
+  rm -f $SSH_AUTH_SOCK
+fi
+_MAV "### Search remaining agent for user"
 for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
   # stop here if root user
   [ $(id -u) -eq 0 ] && return
@@ -149,5 +151,6 @@ for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
   fi
 done
 }
+
 
 
