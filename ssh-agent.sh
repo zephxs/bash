@@ -119,6 +119,7 @@ _CHKSSH
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
 
 sshagent-kill () {
+# v.1.3
 # get pid from exported agent
 _SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
 export SSH_AGENT_PID=$(_SSHPID)
@@ -144,7 +145,7 @@ for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
 # stop here if root user
   [ $(id -u) -eq 0 ] && return
 # stop if pid not own by user
-  ps -p $i -F|grep ssh-agent|awk '{print $1}'|grep $(id -un) || continue
+  ps -p $i -F|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
 # stop if pid not numeric
   [ "$i" -eq "$i" ] || continue
   _RED "/!\ Check if PID match user ssh agent:"
