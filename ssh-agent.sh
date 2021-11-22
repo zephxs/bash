@@ -118,15 +118,25 @@ _CHKSSH
 
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
 
+
 sshagent-kill () {
 # v.1.3
 # get pid from exported agent
 _SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
-export SSH_AGENT_PID=$(_SSHPID)
+
 _BLU "####################################################"
 _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO "### Find Agent pid "
-if ps aux |grep -q $SSH_AGENT_PID; then _OK; else _KO; fi
+if [ -z "$SSH_AGENT_PID" ]; then
+  if [ -z "$(_SSHPID)" ]; then
+        _KO "PIDnotFound"
+  else
+export SSH_AGENT_PID=$(_SSHPID)
+  fi
+if [ ! -z "$SSH_AGENT_PID" ]; then
+ if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK; else _KO "PIDnotRunning"; fi
+fi
+fi
 _MYECHO "### Remove Key "
 if ssh-add -D &>/dev/null; then _OK; else _KO; fi
 _MYECHO "### Kill Agent "
@@ -139,13 +149,13 @@ else
   rm -f $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
 fi
 fi
-if ps --user $(id -u) -F|grep -q ssh-agent; then
+if ps --user $(id -u) -F|grep -v grep|grep -q ssh-agent; then
 _MAV "### Search remaining agent for $(id -un)"
-for i in $(ps --user $(id -u) -F|grep ssh-agent|awk '{print $2}'); do
+for i in $(ps --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{print $2}'); do
 # stop here if root user
   [ $(id -u) -eq 0 ] && return
 # stop if pid not own by user
-  ps -p $i -F|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
+  ps -p $i -F|grep -v grep|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
 # stop if pid not numeric
   [ "$i" -eq "$i" ] || continue
   _RED "/!\ Check if PID match user ssh agent:"
@@ -161,4 +171,6 @@ fi
 _MYECHO "### Agent Cleanup " && _OK ".Done"
 echo
 }
+
+
 
