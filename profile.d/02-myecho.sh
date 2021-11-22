@@ -1,3 +1,4 @@
+# ty BV @R0 ; ]
 _MYECHO () {
   _DOTNUM=40
   if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
