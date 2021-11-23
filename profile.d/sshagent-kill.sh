@@ -5,21 +5,20 @@ sshagent-kill () {
 # v.1.3
 # get pid from exported agent
 _SSHPID () { cat $HOME/.ssh/.ssh-agent|grep _PID|awk -F'[=;]' '{print $2}' ; }
-
 _BLU "####################################################"
 _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO "### Find Agent pid "
 if [ -z "$SSH_AGENT_PID" ]; then
   if [ -z "$(_SSHPID)" ]; then
-        _KO ".PIDnotFound"
+        _KO ".NotFound"
   else
 export SSH_AGENT_PID=$(_SSHPID)
   fi
   if [ ! -z "$SSH_AGENT_PID" ]; then
-    if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".RunningPIDfound"; else _KO ".PIDnotRunning"; fi
+    if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".Running"; else _KO ".NotRunning"; fi
   fi
 else
-  if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".RunningPIDfound"; else _KO ".PIDnotRunning"; fi
+  if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".Running"; else _KO ".NotRunning"; fi
 fi
 _MYECHO "### Remove Key "
 if ssh-add -D &>/dev/null; then _OK; else _KO ".NoKey"; fi
