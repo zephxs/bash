@@ -24,7 +24,7 @@ _MYECHO "### Remove Key "
 if ssh-add -D &>/dev/null; then _OK; else _KO ".NoKey"; fi
 _MYECHO "### Kill Agent "
 if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
-if [ -f ${SSH_AUTH_SOCK} ]; then
+if [ -e ${SSH_AUTH_SOCK} ]; then
 _MYECHO "### Remove Socket "
 if type shred &>/dev/null; then
   shred -zvu $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
