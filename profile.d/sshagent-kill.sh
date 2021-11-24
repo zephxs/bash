@@ -15,28 +15,26 @@ if [ -z "$SSH_AGENT_PID" ]; then
 export SSH_AGENT_PID=$(_SSHPID)
   fi
   if [ ! -z "$SSH_AGENT_PID" ]; then
-    if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".Running"; else _KO ".NotRunning"; fi
+    if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".pid=$SSH_AGENT_PID"; else _KO ".NotRunning"; fi
   fi
 else
-  if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".Running"; else _KO ".NotRunning"; fi
+  [ "$SSH_AGENT_PID" != "$(_SSHPID)" ] && export SSH_AGENT_PID=$(_SSHPID)
+  if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".pid=$SSH_AGENT_PID"; else _KO ".NotRunning"; fi
 fi
+
 _MYECHO "### Remove Key "
 if ssh-add -D &>/dev/null; then _OK; else _KO ".NoKey"; fi
 _MYECHO "### Kill Agent "
 if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
 if [ -e ${SSH_AUTH_SOCK} ]; then
 _MYECHO "### Remove Socket "
-if type shred &>/dev/null; then
-  shred -zvu $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
-else
-  rm -f $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
-fi
+  rm -f $SSH_AUTH_SOCK &>/dev/null && _OK
 fi
 if ps --user $(id -u) -F|grep -v grep|grep -q ssh-agent; then
 _MAV "### Search remaining agent for $(id -un)"
-for i in $(ps --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{print $2}'); do
-# stop here if root user
-  [ $(id -u) -eq 0 ] && return
+for i in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{print $2}'); do
+# cry if root user
+  [ $(id -u) -eq 0 ] && _RED "Root user detected, CAUTION.."
 # stop if pid not own by user
   ps -p $i -F|grep -v grep|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
 # stop if pid not numeric
