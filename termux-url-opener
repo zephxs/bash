@@ -1,6 +1,6 @@
 #!/bin/bash
 ### required youtube-dl and screen for backgrounding
-### relove screen -S xxxx if not needed
+### remove screen -S xxxx if not needed
 ### place in user path and chmod +x
 
 # Define your destination paths here :
