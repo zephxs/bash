@@ -40,11 +40,6 @@ case "$REPLY" in
   echo '..Exiting'
   exit
   ;;
-  s) echo "###########################" 
-  echo 'Downloading file...'
-  screen -S ydl youtube-dl -o '/data/data/com.termux/files/home/storage/shared/STK/.ol/new/%(title)s.%(ext)s' ${_URL}
-  break
-  ;;
   *) echo "###########################" 
   echo 'Downloading mp3 file...'
   screen -S music youtube-dl -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
