@@ -1,40 +1,55 @@
 #!/bin/bash
+### required youtube-dl and screen for backgrounding
+### relove screen -S xxxx if not needed
+### place in user path and chmod +x
 
+# Define your destination paths here :
+_VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
+_ABOOKS='/data/data/com.termux/files/home/storage/shared/Music/6-audiobooks/%(title)s.%(ext)s'
+_ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(ext)s'
+
+# 1st arg will be use as youtube url
 clear
 _URL=$1
-#if [[ ${_URL} =~ ^.*http.*$ ]]; then
 grep -q "^http.*" <<< ${_URL} || exit 1
-echo "####### Youtube-DL v2.1 #######"
+
+# Menu
+echo "####### Youtube-DL v2.3 #######"
 echo "### url : ${_URL}"
 echo "### Press : "
 echo "'1' for Video"
 echo "'2' for AudioBook"
 echo "'Enter' for Music"
 echo "'q' to quit"
+
+# Main
 read -p "> " -n 1 -r
-# clear
 while true; do
 case "$REPLY" in
   1) echo "###########################"
   echo 'Downloading video...'
-  screen -S video youtube-dl -o '/data/data/com.termux/files/home/storage/shared/Youtube/%(title)s.%(ext)s' ${_URL}
+  screen -S video youtube-dl -o "${_VIDEOS}" ${_URL}
   break
   ;;
   2) echo "###########################"
   echo 'Downloading AudioBook file...'
-  screen -S audiobook youtube-dl -f best -x --audio-format mp3 -o '/data/data/com.termux/files/home/storage/shared/Music/Audiobooks/%(title)s.%(ext)s' ${_URL}
+  screen -S audiobook youtube-dl -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
   q) echo "###########################"
   echo '..Exiting'
   exit
   ;;
+  s) echo "###########################" 
+  echo 'Downloading file...'
+  screen -S ydl youtube-dl -o '/data/data/com.termux/files/home/storage/shared/STK/.ol/new/%(title)s.%(ext)s' ${_URL}
+  break
+  ;;
   *) echo "###########################" 
   echo 'Downloading mp3 file...'
-  screen -S music youtube-dl -f best -x --audio-format mp3 -o '/data/data/com.termux/files/home/storage/shared/Music/Newz/%(title)s.%(ext)s' ${_URL}
+  screen -S music youtube-dl -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
 esac
 done
 
-#fi
