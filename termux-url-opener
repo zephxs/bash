@@ -1,12 +1,39 @@
 #!/bin/bash
-### required youtube-dl and screen for backgrounding
-### remove screen -S xxxx if not needed
-### place in user path and chmod +x
+### to be placed in user path ~/bin/ and chmod +x
+# required youtube-dl and screen for backgrounding
+type pip >/dev/null || (echo "... Installing pip" && pkg install python;)
+type youtube-dl >/dev/null || (echo "... Installing youtube-dl" && pip install youtube-dl;)
+# remove screen -S xxxx if not needed
+type screen >/dev/null || (echo "... Installing screen" && pkg install screen;)
 
 # Define your destination paths here :
 _VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
 _ABOOKS='/data/data/com.termux/files/home/storage/shared/Music/6-audiobooks/%(title)s.%(ext)s'
 _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(ext)s'
+
+_MYECHO () { 
+_DOTNUM=20;
+if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
+_CHAINL=$(echo $@ | wc -c)
+_DOTL=$((_DOTNUM - _CHAINL))
+echo -e "$@\c"
+i=0
+while [ "$i" -lt "$_DOTL" ]; do echo -e ".\c"; i=$((i+1)); done
+return 0
+}
+
+### colors
+_REZ="\e[0m"
+_RDX="\e[1;31m"
+_BLX="\e[1;34m"
+_GRX="\e[1;32m"
+_MVX="\e[1;95m"
+_BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
+_RED () { echo -e "${_RDX}${@}${_REZ}" ; }
+_GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
+_MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
+_OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
+_KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 # 1st arg will be use as youtube url
 clear
@@ -14,13 +41,19 @@ _URL=$1
 grep -q "^http.*" <<< ${_URL} || exit 1
 
 # Menu
-echo "####### Youtube-DL v2.3 #######"
-echo "### url : ${_URL}"
-echo "### Press : "
-echo "'1' for Video"
-echo "'2' for AudioBook"
-echo "'Enter' for Music"
-echo "'q' to quit"
+_MAV "######################################"
+_MAV "########### Youtube-DL v2.3 ##########"
+_MAV "######################################"
+_MAV "### url : ${_URL}"
+_BLU "# Press : "
+#_MYECHO "<i>for Video" && echo '[1]'
+#_MYECHO "<i>for AudioBook" && echo '[2]'
+#_MYECHO "<i>for Music" && echo '[Enter]'
+#_MYECHO "Exit" && echo '[q]'
+_MYECHO "[1] " && echo ' for Video'
+_MYECHO "[2] " && echo ' for Audiobooks'
+_MYECHO "[Enter] " && echo ' for Music'
+_MYECHO "[q] " && echo ' to quit'
 
 # Main
 read -p "> " -n 1 -r
@@ -40,11 +73,18 @@ case "$REPLY" in
   echo '..Exiting'
   exit
   ;;
-  *) echo "###########################" 
+  s) echo "###########################" 
+  echo 'Downloading file...'
+  screen -S ydl youtube-dl -o '/data/data/com.termux/files/home/storage/shared/STK/.ol/new/%(title)s.%(ext)s' ${_URL}
+  break
+  ;;
+  *) echo "###########################"
   echo 'Downloading mp3 file...'
   screen -S music youtube-dl -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
 esac
 done
+
+
 
