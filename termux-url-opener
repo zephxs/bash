@@ -46,10 +46,6 @@ _MAV "########### Youtube-DL v2.3 ##########"
 _MAV "######################################"
 _MAV "### url : ${_URL}"
 _BLU "# Press : "
-#_MYECHO "<i>for Video" && echo '[1]'
-#_MYECHO "<i>for AudioBook" && echo '[2]'
-#_MYECHO "<i>for Music" && echo '[Enter]'
-#_MYECHO "Exit" && echo '[q]'
 _MYECHO "[1] " && echo ' for Video'
 _MYECHO "[2] " && echo ' for Audiobooks'
 _MYECHO "[Enter] " && echo ' for Music'
