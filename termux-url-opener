@@ -42,7 +42,7 @@ grep -q "^http.*" <<< ${_URL} || exit 1
 
 # Menu
 _MAV "######################################"
-_MAV "########### Youtube-DL v2.3 ##########"
+_MAV "########### Youtube-DL v2.4 ##########"
 _MAV "######################################"
 _MAV "### url : ${_URL}"
 _BLU "# Press : "
@@ -56,23 +56,25 @@ read -p "> " -n 1 -r
 while true; do
 case "$REPLY" in
   1) echo "###########################"
-  echo 'Downloading video...'
-  screen -S video youtube-dl -o "${_VIDEOS}" ${_URL}
-  break
+echo '# Downloading video, detect format..'
+    select _FORMATRAW in $(youtube-dl --list-formats ${_URL} |egrep -v 'only|^\[youtube|^\[info|^format'|awk '{print $1"_"$2"_"$3"_"$4}'); do
+    _FORMAT=$(echo ${_FORMATRAW}|awk -F'_' '{print $1}')
+    _FORMATINFO=$(echo ${_FORMATRAW}|awk -F'_' '{print $3}')
+    echo "# Format = $_FORMATINFO"
+    [ -z "$_FORMAT"] && { echo "> wrong format.."; echo && continue; }
+    break
+    done
+  screen -S video youtube-dl -f ${_FORMAT} -o "${_VIDEOS}" ${_URL}
+ break
   ;;
   2) echo "###########################"
-  echo 'Downloading AudioBook file...'
+  echo '# Downloading AudioBook file...'
   screen -S audiobook youtube-dl -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
   q) echo "###########################"
   echo '..Exiting'
   exit
-  ;;
-  s) echo "###########################" 
-  echo 'Downloading file...'
-  screen -S ydl youtube-dl -o '/data/data/com.termux/files/home/storage/shared/STK/.ol/new/%(title)s.%(ext)s' ${_URL}
-  break
   ;;
   *) echo "###########################"
   echo 'Downloading mp3 file...'
