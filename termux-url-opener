@@ -47,7 +47,8 @@ _MAV "######################################"
 _MAV "### url : ${_URL}"
 _BLU "# Press : "
 _MYECHO "[1] " && echo ' for Video'
-_MYECHO "[2] " && echo ' for Audiobooks'
+_MYECHO "[2] " && echo ' for Video - format selection'
+_MYECHO "[3] " && echo ' for Audiobooks'
 _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
 
@@ -56,6 +57,11 @@ read -p "> " -n 1 -r
 while true; do
 case "$REPLY" in
   1) echo "###########################"
+echo '# Downloading video..'
+  screen -S video youtube-dl --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
+ break
+  ;;
+  2) echo "###########################"
 echo '# Downloading video, detect format..'
     select _FORMATRAW in $(youtube-dl --list-formats ${_URL} |egrep -v 'only|^\[youtube|^\[info|^format'|awk '{print $1"_"$2"_"$3"_"$4}'); do
     _FORMAT=$(echo ${_FORMATRAW}|awk -F'_' '{print $1}')
@@ -67,7 +73,7 @@ echo '# Downloading video, detect format..'
   screen -S video youtube-dl --restrict-filenames -f ${_FORMAT} -o "${_VIDEOS}" ${_URL}
  break
   ;;
-  2) echo "###########################"
+  3) echo "###########################"
   echo '# Downloading AudioBook file...'
   screen -S audiobook youtube-dl --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
