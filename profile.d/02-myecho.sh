@@ -1,6 +1,6 @@
 # ty BV @R0 ; ]
 _MYECHO () {
-  _DOTNUM=40
+  _DOTNUM=50
   if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
   _CHAINL=$(echo $@ | wc -c)
   _DOTL=$((_DOTNUM - _CHAINL))

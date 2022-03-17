@@ -1,10 +1,10 @@
 #!/bin/bash
 ### to be placed in user path ~/bin/ and chmod +x
 # required youtube-dl and screen for backgrounding
-type pip >/dev/null || (echo "... Installing pip" && pkg update -y && pkg install python -y;)
-type youtube-dl >/dev/null || (echo "... Installing youtube-dl" && pkg install ffmpeg -y && yes | pip install youtube-dl;)
+type pip >/dev/null || { echo "... Installing pip" && pkg update -y && pkg install python -y; }
+type youtube-dl >/dev/null || { echo "... Installing youtube-dl" && pkg install ffmpeg -y ; yes | pip install youtube-dl; }
 # remove screen -S xxxx if not needed
-type screen >/dev/null || (echo "... Installing screen" && pkg install screen -y;)
+type screen >/dev/null || { echo "... Installing screen" && pkg install screen -y; }
 
 # Define your destination paths here :
 _VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
@@ -89,6 +89,4 @@ echo '# Downloading video, detect format..'
   ;;
 esac
 done
-
-
 

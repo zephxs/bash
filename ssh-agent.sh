@@ -60,7 +60,7 @@ _MYECHO () {
 
 
 ### SSH AGENT SESSION LOADER
-_CHKSSH () {
+sshagent-check () {
 # v1.4 -
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
@@ -112,7 +112,7 @@ _MYECHO "### Loaded SSH keys " && _OK .${_KEY}
 echo
 echo
 }
-_CHKSSH
+sshagent-check
 
 
 
