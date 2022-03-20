@@ -1,10 +1,10 @@
 #!/bin/bash
 ### to be placed in user path ~/bin/ and chmod +x
-# required youtube-dl and screen for backgrounding
-type pip >/dev/null || { echo "... Installing pip" && pkg update -y && pkg install python -y; }
-type youtube-dl >/dev/null || { echo "... Installing youtube-dl" && pkg install ffmpeg -y ; yes | pip install youtube-dl; }
+# required yt-dlp and screen for backgrounding
+type pip >/dev/null || (echo "... Installing pip" && pkg install python3;)
+type yt-dlp >/dev/null || (echo "... Installing yt-dlp" && python3 -m pip install -U yt-dlp;)
 # remove screen -S xxxx if not needed
-type screen >/dev/null || { echo "... Installing screen" && pkg install screen -y; }
+type screen >/dev/null || (echo "... Installing screen" && pkg install screen;)
 
 # Define your destination paths here :
 _VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
@@ -46,36 +46,50 @@ _MAV "########### Youtube-DL v2.4 ##########"
 _MAV "######################################"
 _MAV "### url : ${_URL}"
 _BLU "# Press : "
-_MYECHO "[1] " && echo ' for Video'
-_MYECHO "[2] " && echo ' for Video - format selection'
-_MYECHO "[3] " && echo ' for Audiobooks'
+_MYECHO "[1] " && echo ' for Video (best format)'
+_MYECHO "[2] " && echo ' for Video (select format)'
+_MYECHO "[3] " && echo ' for Video (select name)'
+_MYECHO "[4] " && echo ' for Audiobooks'
 _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
 
+# function to select format of video file to DL
+_FORMATSELECT (){
+local IFS="$(printf '\n')"
+select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only" |egrep 'mp4|webm' |awk -F'|' '{print $1" size="$2}'); do
+_FORMATID=$(awk '{print $1}' <$_FORMATIDLINE)
+break
+done
+}
+
 # Main
-read -p "> " -n 1 -r
+read -s -n 1 -r
 while true; do
 case "$REPLY" in
   1) echo "###########################"
-echo '# Downloading video..'
-  screen -S video youtube-dl --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
- break
+  echo '# Downloading video..'
+  screen yt-dlp --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
+  break
   ;;
   2) echo "###########################"
-echo '# Downloading video, detect format..'
-    select _FORMATRAW in $(youtube-dl --list-formats ${_URL} |egrep -v 'only|^\[youtube|^\[info|^format'|awk '{print $1"_"$2"_"$3"_"$4}'); do
-    _FORMAT=$(echo ${_FORMATRAW}|awk -F'_' '{print $1}')
-    _FORMATINFO=$(echo ${_FORMATRAW}|awk -F'_' '{print $3}')
-    echo "# Format = $_FORMATINFO"
-    [ -z "$_FORMAT"] && { echo "> wrong format.."; echo && continue; }
-    break
-    done
-  screen -S video youtube-dl --restrict-filenames -f ${_FORMAT} -o "${_VIDEOS}" ${_URL}
- break
+  echo '# Downloading video, detect format..'
+  _FORMATSELECT
+  echo "# Format = $_FORMATIDLINE"
+  [ -z "$_FORMATID"] && { echo "> wrong format.." && continue; }
+  screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
+  break
   ;;
   3) echo "###########################"
+  echo '# Downloading video, choose output..'
+  read -p "Filename: " _ONAME
+  _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
+  _FORMATSELECT
+  screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
+  break
+  ;;
+  4) echo "###########################"
   echo '# Downloading AudioBook file...'
-  screen -S audiobook youtube-dl --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
+  screen yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
   q) echo "###########################"
@@ -84,7 +98,7 @@ echo '# Downloading video, detect format..'
   ;;
   *) echo "###########################"
   echo 'Downloading mp3 file...'
-  screen -S music youtube-dl --restrict-filenames -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
+  screen -S music yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
 esac
