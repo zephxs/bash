@@ -54,10 +54,12 @@ _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
 
 # function to select format of video file to DL
+echo
 _FORMATSELECT (){
-local IFS="$(printf '\n')"
-select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only" |egrep 'mp4|webm' |awk -F'|' '{print $1" size="$2}'); do
-_FORMATID=$(awk '{print $1}' <$_FORMATIDLINE)
+local IFS="
+"
+select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only" |egrep 'mp4|webm' |awk '{print $1" "$2" @"$3" size="$6}'); do
+_FORMATID=$(echo $_FORMATIDLINE |awk '{print $1}')
 break
 done
 }
