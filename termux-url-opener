@@ -72,19 +72,19 @@ done
 read -s -n 1 -r
 while true; do
 case "$REPLY" in
- 1) _BLU "###########################"
+ 1) _BLU "######################################"
   _BLU '# Downloading video..'
   screen yt-dlp --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
   break
   ;;
- 2) _BLU "###########################"
+ 2) _BLU "######################################"
   _BLU '# Downloading video, detecting format..'
   _FORMATSELECT
   [ -z "$_FORMATID"] && ( _RED "> wrong format.." && continue; )
   screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
   break
   ;;
- 3) _BLU "###########################"
+ 3) _BLU "######################################"
   _BLU '# Downloading video, choosing output..'
   read -p "Filename: " _ONAME
   _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
@@ -92,16 +92,16 @@ case "$REPLY" in
   screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
   break
   ;;
- 4) _BLU "###########################"
+ 4) _BLU "######################################"
   _BLU '# Downloading AudioBook file..'
   screen yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
- q) _BLU "###########################"
+ q) _BLU "######################################"
   _RED '..Exiting'
   exit
   ;;
- *) _BLU "###########################"
+ *) _BLU "######################################"
   _BLU 'Downloading mp3 file..'
   screen -S music yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
