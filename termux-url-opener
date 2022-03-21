@@ -1,28 +1,32 @@
 #!/bin/bash
 ### to be placed in user path ~/bin/ and chmod +x
-# required yt-dlp and screen for backgrounding
-type pip >/dev/null || (echo "... Installing pip" && pkg install python3;)
-type yt-dlp >/dev/null || (echo "... Installing yt-dlp" && python3 -m pip install -U yt-dlp;)
-# remove screen -S xxxx if not needed
-type screen >/dev/null || (echo "... Installing screen" && pkg install screen;)
 
+### REQUIREMENTS
 # Define your destination paths here :
 _VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
 _ABOOKS='/data/data/com.termux/files/home/storage/shared/Music/6-audiobooks/%(title)s.%(ext)s'
 _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(ext)s'
 
+### AUTO INSTALLER
+# required pip for easy install and update
+type pip >/dev/null || ( echo "... Installing pip" && pkg install python3; )
+# update if bin older than 15 days or install if missing
+find $(which yt-dlp) -mtime +1 -exec python3 -m pip install -U yt-dlp \; || python3 -m pip install -U yt-dlp
+# install screen for backgrounding - can be removed with occurences if not needed
+type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
+
+### FUNCTIONS
 _MYECHO () { 
 _DOTNUM=20;
 if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
 _CHAINL=$(echo $@ | wc -c)
 _DOTL=$((_DOTNUM - _CHAINL))
-echo -e "$@\c"
 i=0
+echo -e "$@\c"
 while [ "$i" -lt "$_DOTL" ]; do echo -e ".\c"; i=$((i+1)); done
 return 0
 }
-
-### colors
+# Colors
 _REZ="\e[0m"
 _RDX="\e[1;31m"
 _BLX="\e[1;34m"
@@ -35,12 +39,11 @@ _MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
+
 # 1st arg will be use as youtube url
 clear
 _URL=$1
 grep -q "^http.*" <<< ${_URL} || exit 1
-
-# Menu
 _MAV "######################################"
 _MAV "########### Youtube-DL v2.4 ##########"
 _MAV "######################################"
@@ -68,7 +71,7 @@ select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only
 done
 }
 
-# Main
+### MAIN
 read -s -n 1 -r
 while true; do
 case "$REPLY" in
