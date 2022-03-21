@@ -61,7 +61,7 @@ echo
 _BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only|^\[|image"); do
+select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only|^\[|image"|awk -F'|' '{print $1" "$2}'); do
   _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
   _GRN "# Format = $_FORMATID"
   break
@@ -73,19 +73,19 @@ read -s -n 1 -r
 while true; do
 case "$REPLY" in
  1) _BLU "######################################"
-  _BLU '# Downloading video..'
+  _BLU '# Video - Downloading..'
   screen yt-dlp --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
   break
   ;;
  2) _BLU "######################################"
-  _BLU '# Downloading video, detecting format..'
+  _BLU '# Video - Detecting Format..'
   _FORMATSELECT
   [ -z "$_FORMATID"] && ( _RED "> wrong format.." && continue; )
   screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
   break
   ;;
  3) _BLU "######################################"
-  _BLU '# Downloading video, choosing output..'
+  _BLU '# Video - Choose Name..'
   read -p "Filename: " _ONAME
   _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
   _FORMATSELECT
@@ -93,7 +93,7 @@ case "$REPLY" in
   break
   ;;
  4) _BLU "######################################"
-  _BLU '# Downloading AudioBook file..'
+  _BLU '# AudioBook - Downloading..'
   screen yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
@@ -102,7 +102,7 @@ case "$REPLY" in
   exit
   ;;
  *) _BLU "######################################"
-  _BLU 'Downloading mp3 file..'
+  _BLU '# MP3 - Downloading..'
   screen -S music yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
