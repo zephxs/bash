@@ -52,15 +52,19 @@ _MYECHO "[3] " && echo ' for Video (select name)'
 _MYECHO "[4] " && echo ' for Audiobooks'
 _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
+echo
 
 # function to select format of video file to DL
-echo
 _FORMATSELECT (){
+yt-dlp --list-formats $_URL
+echo
+_BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only" |egrep 'mp4|webm' |awk '{print $1" "$2" @"$3" size="$6}'); do
-_FORMATID=$(echo $_FORMATIDLINE |awk '{print $1}')
-break
+select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only|^\[|image"); do
+  _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
+  _GRN "# Format = $_FORMATID"
+  break
 done
 }
 
@@ -68,38 +72,37 @@ done
 read -s -n 1 -r
 while true; do
 case "$REPLY" in
-  1) echo "###########################"
-  echo '# Downloading video..'
+ 1) _BLU "###########################"
+  _BLU '# Downloading video..'
   screen yt-dlp --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
   break
   ;;
-  2) echo "###########################"
-  echo '# Downloading video, detect format..'
+ 2) _BLU "###########################"
+  _BLU '# Downloading video, detecting format..'
   _FORMATSELECT
-  echo "# Format = $_FORMATIDLINE"
-  [ -z "$_FORMATID"] && { echo "> wrong format.." && continue; }
+  [ -z "$_FORMATID"] && ( _RED "> wrong format.." && continue; )
   screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
   break
   ;;
-  3) echo "###########################"
-  echo '# Downloading video, choose output..'
+ 3) _BLU "###########################"
+  _BLU '# Downloading video, choosing output..'
   read -p "Filename: " _ONAME
   _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
   _FORMATSELECT
   screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
   break
   ;;
-  4) echo "###########################"
-  echo '# Downloading AudioBook file...'
+ 4) _BLU "###########################"
+  _BLU '# Downloading AudioBook file..'
   screen yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
-  q) echo "###########################"
-  echo '..Exiting'
+ q) _BLU "###########################"
+  _RED '..Exiting'
   exit
   ;;
-  *) echo "###########################"
-  echo 'Downloading mp3 file...'
+ *) _BLU "###########################"
+  _BLU 'Downloading mp3 file..'
   screen -S music yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
