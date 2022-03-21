@@ -74,7 +74,7 @@ while true; do
 case "$REPLY" in
  1) _BLU "######################################"
   _BLU '# Video - Downloading..'
-  screen yt-dlp --restrict-filenames -f best -o "${_VIDEOS}" ${_URL}
+  screen yt-dlp --restrict-filenames -o "${_VIDEOS}" ${_URL}
   break
   ;;
  2) _BLU "######################################"
@@ -94,7 +94,7 @@ case "$REPLY" in
   ;;
  4) _BLU "######################################"
   _BLU '# AudioBook - Downloading..'
-  screen yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
+  screen yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
  q) _BLU "######################################"
@@ -103,7 +103,7 @@ case "$REPLY" in
   ;;
  *) _BLU "######################################"
   _BLU '# MP3 - Downloading..'
-  screen -S music yt-dlp --restrict-filenames -f best -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
+  screen -S music yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
 esac
