@@ -15,14 +15,15 @@ gitp (){
 }
 
 repsync(){
+_DESTREPO='rep'
 _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
-for _DIR in 'bash' 'ncat-ipset-honeypot' 'priv'; do
 cd $_REPOROOT
-cp -ar $_DIR rep/
-cd rep/$_DIR
+for _DIR in $(ls | grep -v $_DESTREPO); do
+cp -ar $_DIR ${_DESTREPO}/
+cd ${_DESTREPO}/${_DIR}
 rm -rf .git README.md LICENSE
 done
-cd $_REPOROOT/rep
+cd ${_REPOROOT}/${_DESTREPO}
 gitp "Reposync - $date"
 }
