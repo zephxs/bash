@@ -1,4 +1,4 @@
-_REPOROOT="$HOME/xtra/admin/repos"
+_REPOROOT="$HOME/repos"
 # pull all rep at once
 pullup (){
 cd $_REPOROOT
@@ -20,10 +20,11 @@ _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
 cd $_REPOROOT
 for _DIR in $(ls | grep -v $_DESTREPO); do
+cd $_REPOROOT
 cp -ar $_DIR ${_DESTREPO}/
 cd ${_DESTREPO}/${_DIR}
 rm -rf .git README.md LICENSE
 done
 cd ${_REPOROOT}/${_DESTREPO}
-gitp "Reposync - $date"
+gitp "Reposync - $(date)"
 }
