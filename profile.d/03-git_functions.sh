@@ -11,6 +11,7 @@ ls -d */ | xargs -I ARGS bash -c "echo \"### repo = ARGS\"|tr -d "/"; cd ARGS; g
 
 
 repsync(){
+_REPOROOT="$HOME/repos"
 _DESTREPO='rep'
 _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
