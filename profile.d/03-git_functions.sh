@@ -8,8 +8,7 @@ _BLU "############### Git Pull all rep UP ################"
 ls -d */ | xargs -I ARGS bash -c "echo \"### repo = ARGS\"|tr -d "/"; cd ARGS; git pull; cd $_REPOROOT && echo"
 }
 
-# add n push, ex 'gitp "my comment"'
-gitp (){ git add .; git commit -m "$@"; git push; }
+
 
 repsync(){
 _DESTREPO='rep'
@@ -25,3 +24,7 @@ done
 cd ${_REPOROOT}/${_DESTREPO}
 gitp "Reposync - $(date)"
 }
+
+# add push sync  (gitp "my comment")
+gitp (){ git add .; git commit -m "$@"; git push; repsync; }
+
