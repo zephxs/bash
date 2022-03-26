@@ -1,6 +1,7 @@
-# Root directory containing all repositories
+### Root directory containing all repositories
 _REPOROOT="$HOME/repos"
-# pull all rep at once
+
+### pull all rep at once
 pullup (){
 cd $_REPOROOT
 _BLU "####################################################"
@@ -8,8 +9,9 @@ _BLU "############### Git Pull all rep UP ################"
 ls -d */ | xargs -I ARGS bash -c "echo \"### repo = ARGS\"|tr -d "/"; cd ARGS; git pull; cd $_REPOROOT && echo"
 }
 
-
-
+### the point is to make commit and sync to backup repo that contain all sub repositories
+# $HOME/repos/ contains all working repositories
+# $HOME/repos/rep is the backup repo
 repsync(){
 _REPOROOT="$HOME/repos"
 _DESTREPO='rep'
@@ -26,6 +28,10 @@ cd ${_REPOROOT}/${_DESTREPO}
 git add .; git commit -m "Reposync - $(date)"; git push
 }
 
-# add push sync  (gitp "my comment")
-gitp (){ git add .; git commit -m "$@"; git push; repsync; }
+# add push and sync to back repo with : gitp "my comment"
+gitp (){ 
+_BLU "####################################################"
+_BLU "############### Git Commit and Sync ################"
+git add .; git commit -m "$@"; git push; repsync
+}
 
