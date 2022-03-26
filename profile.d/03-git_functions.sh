@@ -6,7 +6,15 @@ pullup (){
 cd $_REPOROOT
 _BLU "####################################################"
 _BLU "############### Git Pull all rep UP ################"
-ls -d */ | xargs -I ARGS bash -c "echo \"### repo = ARGS\"|tr -d "/"; cd ARGS; git pull; cd $_REPOROOT && echo"
+for _REP in $(ls -d */); do
+ _BLU "### repo = $_REP"|tr -d "/"
+ cd $_REP
+ for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
+  git checkout $_BRANCH
+  git pull
+ done
+cd $_REPOROOT && echo
+done
 }
 
 ### the point is to make commit and sync to backup repo that contain all sub repositories
@@ -19,10 +27,10 @@ _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
 cd $_REPOROOT
 for _DIR in $(ls | grep -v $_DESTREPO); do
-cd $_REPOROOT
-cp -ar $_DIR ${_DESTREPO}/
-cd ${_DESTREPO}/${_DIR}
-rm -rf .git README.md LICENSE
+ cd $_REPOROOT
+ cp -ar $_DIR ${_DESTREPO}/
+ cd ${_DESTREPO}/${_DIR}
+ rm -rf .git README.md LICENSE
 done
 cd ${_REPOROOT}/${_DESTREPO}
 git add .
