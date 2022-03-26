@@ -23,7 +23,7 @@ cd ${_DESTREPO}/${_DIR}
 rm -rf .git README.md LICENSE
 done
 cd ${_REPOROOT}/${_DESTREPO}
-gitp "Reposync - $(date)"
+git add.; git commit -m "Reposync - $(date)"; git push
 }
 
 # add push sync  (gitp "my comment")
