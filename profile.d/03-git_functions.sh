@@ -25,13 +25,20 @@ cd ${_DESTREPO}/${_DIR}
 rm -rf .git README.md LICENSE
 done
 cd ${_REPOROOT}/${_DESTREPO}
-git add .; git commit -m "Reposync - $(date)"; git push
+git add .
+git commit -m "Sync $(date +"%H:%M-%d.%m.%Y") - $_ORIGREP - $_MSG"
+git push
 }
 
 # add push and sync to back repo with : gitp "my comment"
 gitp (){ 
 _BLU "####################################################"
 _BLU "############### Git Commit and Sync ################"
-git add .; git commit -m "$@"; git push; repsync
+_MSG=$@
+git add .; git commit -m "$_MSG"; git push
+_ORIGREP=$(git remote show origin |grep 'Fetch URL' |awk -F'/' '{print $NF}' |sed 's/.git//')
+_MSG=$_MSG / 
+_ORIGREP=$_ORIGREP /
+repsync
 }
 
