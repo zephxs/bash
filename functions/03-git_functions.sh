@@ -1,6 +1,10 @@
 ### Root directory containing all repositories
 _REPOROOT="$HOME/repos"
 
+# colorize if not set
+_BLX="\e[1;34m"
+_BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
+
 ### pull all rep at once
 pullup (){
 cd $_REPOROOT
@@ -47,4 +51,5 @@ git add .; git commit -m "$_MSG"; git push
 _ORIGREP=$(git remote show origin |grep 'Fetch URL' |awk -F'/' '{print $NF}' |sed 's/.git//')
 _MSG=$_MSG _ORIGREP=$_ORIGREP repsync
 }
+
 
