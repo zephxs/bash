@@ -26,7 +26,7 @@ rm -rf .git README.md LICENSE
 done
 cd ${_REPOROOT}/${_DESTREPO}
 git add .
-git commit -m "Sync $(date +"%H:%M-%d.%m.%Y") - $_ORIGREP - $_MSG"
+git commit -m "#Sync=$(date +"%H:%M-%d.%m.%Y") #Rep=$_ORIGREP - $_MSG"
 git push
 }
 
