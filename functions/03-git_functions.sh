@@ -34,7 +34,7 @@ for _DIR in $(ls | grep -v $_DESTREPO); do
 done
 cd ${_REPOROOT}/${_DESTREPO}
 git add .
-git commit -m "#Sync=$(date +"%H:%M-%d.%m.%Y") #Rep=$_ORIGREP - $_MSG"
+git commit -m "#Repo=$_ORIGREP #Sync=$(date +"%H:%M-%d.%m.%Y") - $_MSG"
 git push
 }
 
@@ -45,8 +45,8 @@ _BLU "############### Git Commit and Sync ################"
 _MSG=$@
 git add .; git commit -m "$_MSG"; git push
 _ORIGREP=$(git remote show origin |grep 'Fetch URL' |awk -F'/' '{print $NF}' |sed 's/.git//')
-_MSG=$_MSG / 
-_ORIGREP=$_ORIGREP /
+_MSG=$_MSG \ 
+_ORIGREP=$_ORIGREP \
 repsync
 }
 
