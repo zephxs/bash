@@ -1,3 +1,4 @@
+# Root directory containing all repositories
 _REPOROOT="$HOME/repos"
 # pull all rep at once
 pullup (){
@@ -8,11 +9,7 @@ ls -d */ | xargs -I ARGS bash -c "echo \"### repo = ARGS\"|tr -d "/"; cd ARGS; g
 }
 
 # add n push, ex 'gitp "my comment"'
-gitp (){
- git add .
- git commit -m "$@"
- git push
-}
+gitp (){ git add .; git commit -m "$@"; git push; }
 
 repsync(){
 _DESTREPO='rep'
