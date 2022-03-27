@@ -1,4 +1,7 @@
 #!/bin/bash
+### Youtube and other streaming sites Downloader script
+### v2.2 - added format selector
+### Replaced youtube-dl with yt-dlp for download speed
 ### to be placed in user path ~/bin/ and chmod +x
 
 ### REQUIREMENTS
@@ -11,7 +14,7 @@ _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(
 # required pip for easy install and update
 type pip >/dev/null || ( echo "... Installing pip" && pkg install python3; )
 # install yt-dlp and update if bin older than 15 days
-find $(which yt-dlp) -mtime +15 -exec python3 -m pip install -U yt-dlp \; || python3 -m pip install -U yt-dlp
+find $(type -P yt-dlp) -mtime +15 -exec python3 -m pip install -U yt-dlp \; || python3 -m pip install -U yt-dlp
 # install screen for backgrounding - can be removed with occurences if not needed
 type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
 
