@@ -10,7 +10,7 @@ _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(
 ### AUTO INSTALLER
 # required pip for easy install and update
 type pip >/dev/null || ( echo "... Installing pip" && pkg install python3; )
-# update if bin older than 15 days or install if missing
+# install yt-dlp and update if bin older than 15 days
 find $(which yt-dlp) -mtime +15 -exec python3 -m pip install -U yt-dlp \; || python3 -m pip install -U yt-dlp
 # install screen for backgrounding - can be removed with occurences if not needed
 type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
@@ -40,7 +40,7 @@ _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 
-# 1st arg will be use as youtube url
+# 1st arg will be used as youtube url
 clear
 _URL=$1
 grep -q "^http.*" <<< ${_URL} || exit 1
