@@ -30,6 +30,7 @@ _DESTREPO='rep'
 _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
 cd $_REPOROOT
+if [ -z "$_DESTREPO" ]; then echo "Destination Repository not set.. exiting!"; exit 1; fi
 for _DIR in $(ls | grep -v $_DESTREPO); do
  cd $_REPOROOT
  cp -ar $_DIR ${_DESTREPO}/
