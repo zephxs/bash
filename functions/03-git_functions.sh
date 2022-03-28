@@ -51,7 +51,7 @@ _BLU "####################################################"
 _BLU "############### Git Commit and Sync ################"
 _MSG=$@
 git add .; git commit -m "$_MSG"; git push
-_ORIGREP=$(git remote show origin |grep 'Fetch URL' |awk -F'/' '{print $NF}' |sed 's/.git//')
+_ORIGREP=$(git remote show origin |grep 'URL' |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 _ORIGREP=$_ORIGREP repsync
 }
 
