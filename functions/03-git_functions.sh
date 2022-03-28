@@ -35,7 +35,7 @@ if [ -z "$_DESTREPO" ]; then echo "Destination Repository not set.. exiting!"; e
 for _DIR in $(ls | grep -v $_DESTREPO); do
  cd $_REPOROOT
  cp -ar $_DIR ${_DESTREPO}/
- rsync -av --delete ${_DIR}/ ${_DESTREPO}/${_DIR}/
+ rsync -qav --delete ${_DIR}/ ${_DESTREPO}/${_DIR}/
  cd ${_DESTREPO}/${_DIR}
  rm -rf .git README.md LICENSE
 done
