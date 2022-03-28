@@ -47,12 +47,13 @@ git push
 
 # add push and sync to back repo with : gitp "my comment"
 gitp (){ 
+_MSG=$@
+_ORIGREP=$(git remote show origin |grep 'URL' |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 _BLU "####################################################"
 _BLU "############### Git Commit and Sync ################"
-_MSG=$@
+_BLU "# Repo= $_ORIGREP # Comment = $_MSG"
 git add .; git commit -m "$_MSG"; git push
-_ORIGREP=$(git remote show origin |grep 'URL' |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
-_ORIGREP=$_ORIGREP repsync
+repsync
 }
 
 
