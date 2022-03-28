@@ -24,6 +24,7 @@ done
 ### the point is to make commit and sync to backup repo that contain all sub repositories
 # $HOME/repos/ contains all working repositories
 # $HOME/repos/rep is the backup repo
+# rsync is needed to delete files that does not exist anymore
 repsync(){
 _REPOROOT="$HOME/repos"
 _DESTREPO='rep'
@@ -34,6 +35,7 @@ if [ -z "$_DESTREPO" ]; then echo "Destination Repository not set.. exiting!"; e
 for _DIR in $(ls | grep -v $_DESTREPO); do
  cd $_REPOROOT
  cp -ar $_DIR ${_DESTREPO}/
+ rsync -av --delete ${_DIR}/ ${_DESTREPO}/${_DIR}/
  cd ${_DESTREPO}/${_DIR}
  rm -rf .git README.md LICENSE
 done
