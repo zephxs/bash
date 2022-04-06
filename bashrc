@@ -3,12 +3,12 @@
 #or
 [ -t 0 ] || return
 
-### Bourne Again Functions
-# die function
-_DIE () { echo $1; exit 1; }
+### BASH HISTORY
+# add time to histfile
+HISTTIMEFORMAT="%d/%m/%y %T "
+# ignore duplicates  #ignoreboth for also removing lines with space in front
+HISTCONTROL=ignoredups
 
-# show time bash or script was started
-_EXECTIME(){ printf '%02dh:%02dm:%02ds\n' $(($SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)) ; }
 
 ### PS1 User set for system wide bashrc (>/etc/bashrc) 
 # change PS1 var if root (toilet line can be commented or remove as toilet is used for ascii art ^^)
@@ -23,3 +23,12 @@ else
     toilet -f smslant --gay "$USER"
     echo
 fi
+
+### Bourne Again Functions
+# die function
+_DIE () { echo $1; exit 1; }
+
+# show time bash or script was started
+_EXECTIME(){ printf '%02dh:%02dm:%02ds\n' $(($SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)) ; }
+
+
