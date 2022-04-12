@@ -4,12 +4,15 @@ alias wiki="dig +short txt "$1".wp.dg.cx"
 alias site-dl="wget --random-wait -r -p -e robots=off -U mozilla http://www.example.com"
 alias simtyping="echo 'You can simulate on-screen typing just like in the movies' | pv -qL 10"
 alias mkadir="mkdir "$1" && cd $_"
-alias numright="stat -c '%A %a %n' *"
+alias numrights="stat -c '%A %a %n' *"
 alias =""
 alias =""
 alias =""
 alias =""
 alias =""
+
+# awk skip 1st line with next
+df -h 2>/dev/null|awk 'NR==1 {next;}; {print $0}'|egrep -vi 'tmpfs|udev'
 
 # colorizing man
 apt-get install most && update-alternatives --set pager /usr/bin/most
@@ -48,7 +51,7 @@ ss -p
 lsof -i tcp:80
 lsof -Pni4 | grep LISTEN
 
-# analyse traffic throigh ssh
+# analyse traffic through ssh
 ssh root@server.com 'tshark -f "port !22" -w -' | wireshark -k -i -
 
 # discover brute force attempts
@@ -69,13 +72,11 @@ netstat -ant | awk '{print $NF}' | grep -v '[a-z]' | sort | uniq -c
 # list ip connected to my host
 netstat -lantp | grep ESTABLISHED |awk '{print $5}' | awk -F: '{print $1}' | sort -u
 
-
 # git remove deleted files
 git rm $(git ls-files --deleted)
 
 # close hanged ssh session
 ~.
-
 
 # recursive search and replace in files
 $ grep -rl oldstring . |xargs sed -i -e 's/oldstring/newstring/'
