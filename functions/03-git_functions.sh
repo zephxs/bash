@@ -34,8 +34,7 @@ cd $_REPOROOT
 if [ -z "$_DESTREPO" ]; then echo "Destination Repository not set.. exiting!"; exit 1; fi
 for _DIR in $(ls | grep -v $_DESTREPO); do
  cd $_REPOROOT
- cp -ar $_DIR ${_DESTREPO}/
- rsync -qav --delete ${_DIR}/ ${_DESTREPO}/${_DIR}/
+ rsync -rqav --delete ${_DIR}/ ${_DESTREPO}/${_DIR}/
  cd ${_DESTREPO}/${_DIR}
  rm -rf .git README.md LICENSE
 done
@@ -55,5 +54,4 @@ _BLU "# Repo= $_ORIGREP  # Comment= $_MSG"
 git add .; git commit -m "$_MSG"; git push
 repsync
 }
-
 
