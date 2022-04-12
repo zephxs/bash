@@ -1,6 +1,6 @@
 ### SSH AGENT SESSION LOADER
-_CHKSSH () {
-# v1.4 -
+sshagent-check () {
+# v1.5 - Personal ssh multi session agent 
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
 export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
@@ -10,16 +10,16 @@ _TIME="28800"
 # func to get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _RES=$? ; }
 _SSHAG
-while [ "$(echo $_RES)" -ge 1 ]; do
+while [ "$_RES" -ge 1 ]; do
   case $_RES in
   2)
     ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
     echo
     _MYECHO "### Test SSH agent "
     sleep 1 && _SSHAG
-    if [ "$(echo $_RES)" = 2 ]; then
+    if [ "$_RES" = 2 ]; then
       _KO .NotLoaded && rm -f $SSH_AUTH_SOCK
-    elif [ "$(echo $_RES)" = 1 ]; then
+    elif [ "$_RES" = 1 ]; then
       _OK .Starting && _SSHAG
     fi
     ;;
@@ -51,4 +51,4 @@ _MYECHO "### Loaded SSH keys " && _OK .${_KEY}
 echo
 echo
 }
-_CHKSSH
+
