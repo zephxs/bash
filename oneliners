@@ -11,6 +11,23 @@ alias =""
 alias =""
 alias =""
 
+# sed replace last character if not '>'
+cat test
+aaa>
+bbb
+ccc>
+ddd
+>
+
+sed -i "/>\$/ ! s/\$/<br>/g" test
+$cat test
+aaa>
+bbb<br>
+ccc>
+ddd<br>
+>
+<br>
+
 # awk skip 1st line with next
 df -h 2>/dev/null|awk 'NR==1 {next;}; {print $0}'|egrep -vi 'tmpfs|udev'
 
