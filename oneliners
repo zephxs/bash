@@ -28,8 +28,8 @@ ddd<br>
 >
 <br>
 
-# awk skip 1st line with next
-df -h 2>/dev/null|awk 'NR==1 {next;}; {print $0}'|egrep -vi 'tmpfs|udev'
+# awk on df output (without errors), skip first line with next, find in first column if contain /dev/sd or xtra and print+count, then print nb (no matter var name)
+df -h 2>/dev/null|awk 'NR==1 {next;}; $1 ~ "/dev/sd|xtra" {print;compte++;}; END {print "Nb de partitions SD: ", compte}'
 
 # colorizing man
 apt-get install most && update-alternatives --set pager /usr/bin/most
