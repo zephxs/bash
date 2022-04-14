@@ -1,5 +1,5 @@
 ### SSH AGENT SESSION LOADER
-sshagent-check () {
+sshagent-loader () {
 # v1.5 - Personal ssh multi session agent 
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
