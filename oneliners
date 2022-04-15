@@ -31,6 +31,9 @@ ddd<br>
 # awk on df output (without errors), skip first line with next, find in first column if contain /dev/sd or xtra and print+count, then print nb (no matter var name)
 df -h 2>/dev/null|awk 'NR==1 {next;}; $1 ~ "/dev/sd|xtra" {print;compte++;}; END {print "Nb de partitions SD: ", compte}'
 
+# awk easy skip first 3 lines
+awk 'FNR>3' testfile
+
 # colorizing man
 apt-get install most && update-alternatives --set pager /usr/bin/most
 
