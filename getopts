@@ -1,0 +1,20 @@
+#!/bin/bash
+while getopts :acx: OPT; do
+    case "${OPT}" in
+          a) _PARAM='-lah';;
+          c) _PARAM='-ltr';;
+          x) _ARG="$OPTARG";;
+     esac
+done
+
+_USAGE(){ echo "$0 -a"; exit 1; }
+
+_LST(){
+ls ${_PARAM}
+}
+
+_ECHO(){ echo $_ARG; }
+
+[ -z "$_PARAM" -a -z "$_ARG" ] && _USAGE
+[ -n "$_PARAM" ] && _LST
+_ECHO
