@@ -2,9 +2,9 @@
 
 
 sshagent-kill () {
-# v.1.3
+# v.1.4
 # get pid from exported agent
-_SSHPID () { awk -F'=|;' '/SSH_AGENT_PID/ {print $2}' <.ssh/.ssh-agent ; }
+_SSHPID () { awk -F'=|;' '/SSH_AGENT_PID/ {print $2}' <$HOME/.ssh/.ssh-agent ; }
 _BLU "####################################################"
 _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO "### Find Agent pid "
