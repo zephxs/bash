@@ -1,5 +1,22 @@
 ### Root directory containing all repositories
-_REPOROOT="$HOME/repos"
+
+#_REPOROOT="$HOME/repos"
+_REPOROOTFIND () {
+if [ -z "$_REPOROOT" ]; then
+  if [ -f "$HOME/.reporoot" ]; then _REPOROOT=$(cat $HOME/.reporoot); else
+  cd $HOME
+  find /media/ /mnt/ $HOME/ -type d -name .git >.reporoot.tmp
+  sed -i 's#/.git##g' .reporoot.tmp
+  awk 'BEGIN{FS=OFS="/"}{$NF=""; NF--; print}' .reporoot.tmp >.reporoot.dirs
+  for _TESTREP in $(uniq -d .reporoot.dirs); do 
+    [ "$(grep $_TESTREP .reporoot.dirs | wc -l)" -ge 3 ]
+    echo "$_TESTREP" >.reporoot
+  done
+  _REPOROOT=$(cat $HOME/.reporoot)
+fi
+fi
+}
+
 
 # colorize if not set
 _BLX="\e[1;34m"
@@ -7,6 +24,7 @@ _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 
 ### pull all rep at once
 pullup (){
+[ -z "$_REPOROOT" ] && _REPOROOTFIND
 cd $_REPOROOT
 _BLU "####################################################"
 _BLU "############### Git Pull all rep UP ################"
@@ -26,7 +44,7 @@ done
 # $HOME/repos/rep is the backup repo
 # rsync is needed to delete files that does not exist anymore
 repsync(){
-_REPOROOT="$HOME/repos"
+[ -z "$_REPOROOT" ] && _REPOROOTFIND
 _DESTREPO='rep'
 _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
