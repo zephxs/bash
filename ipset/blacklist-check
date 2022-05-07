@@ -1,32 +1,33 @@
 #!/bin/bash
+### Check if $1 is an IP address and if it is contained in a configure IPSet Blacklist
 
 IP1=$1
 
-# validate that test string is an IP
+# validate that test string is an IP. exit 2 if not.
 # Credits :  https://github.com/marios-zindilis/Scripts/blob/master/Bash/is_ip.sh
 function is_IP() {
 if [ $(echo "$1" | grep -o '\.' | wc -l) -ne 3 ]; then
  echo "'$1' does not look like an IP Address (does not contain 3 dots).";
  echo "### Usage ###"
  echo "$(basename $0) ip.ad.dr.es"
- exit 1;
+ exit 2;
 elif [ $(echo "$1" | tr '.' ' ' | wc -w) -ne 4 ]; then
  echo "'$1' does not look like an IP Address (does not contain 4 octets).";
  echo "### Usage ###"
  echo "$(basename $0) ip.ad.dr.es"
- exit 1;
+ exit 2;
 else
 for OCTET in $(echo $1 | tr '.' ' '); do
 if ! [[ "$OCTET" =~ ^[0-9]+$ ]]; then
  echo "'$1' is not an IP Address (octet '$OCTET' is not numeric).";
  echo "### Usage ###"
  echo "$(basename $0) ip.ad.dr.es"
- exit 1;
+ exit 2;
 elif [[ "$OCTET" -lt 0 || "$OCTET" -gt 255 ]]; then
  echo "'$1' is not an IP Address (octet '$OCTET' in not in range 0-255).";
  echo "### Usage ###"
  echo "$(basename $0) ip.ad.dr.es"
- exit 1;
+ exit 2;
 fi
 done
 fi
@@ -35,10 +36,10 @@ return 0;
 
 # Search for IP address in every blacklist configured in IPSET and exit 0 for scripts
 if is_IP "$IP1"; then
- for i in $(ipset list -n); do 
-  ipset test $i $IP1 && exit 0
+ for _LST in $(cat /root/blacklist/ipset-list); do
+#  ipset test $_LST $IP1 && exit 0 || _RC=1
+  ipset test $_LST $IP1 && _RC=0 || continue 1
  done
-else
- echo "### Usage ###"
- echo "$(basename $0) ip.ad.dr.es"
 fi
+# exit 0 if IP is found in a blacklist, else exit 1
+[ "$_RC" = 0 ] && exit 0

@@ -4,7 +4,7 @@ _TMP=$(mktemp /tmp/.fireshXXX)
 # show list :
 echo "#######################################"
 echo "####### configured ipset lists: #######"
-for i in $(ipset list -terse |grep Name|awk '{print $2}'); do
+for i in $(ipset list -n); do
 echo "#######################################"
 echo "### IPSet list : $i"
 echo "### - $(ipset list $i|wc -l) IP/subnets blocked"
@@ -18,12 +18,17 @@ echo
 done
 echo "#######################################"
 echo "### Blocklists chain global drop :"
-echo
 for i in INPUT OUTPUT FORWARD; do iptables -nvL $i --line-n|grep -B 2 blocklists ; done
+echo
 echo "#######################################"
-echo "### blocked ip the last days :"
+echo "### blocked ip :"
 for i in 7 6 5 4 3 2 1 0; do
 _XDATE=$(date +"%d-%m" --date="$i days ago")
-echo "- $i days ago: $(cat /root/blacklist/horny-banlist|grep $_XDATE|wc -l) IP addess blocked"
+if [ "$i" != 0 ]; then
+  echo "- $i days ago: $(cat /root/blacklist/horny-banlist|grep $_XDATE|wc -l) IP addess blocked"
+else
+  echo "- todays ban: $(cat /root/blacklist/horny-banlist|grep $_XDATE|wc -l) IP addess blocked"
+fi
 done
+echo
 echo "#######################################"
