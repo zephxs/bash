@@ -5,7 +5,7 @@
 ### 0.9 - counter placed to skip if no new error logs
 ### 0.8 - personnal IP protection
 ### 0.7 - Nginx logs parsing
-#set -x
+# Plan : adding more var and funcs
 
 # Vars
 _LOGD="/root/blacklist/logs"
@@ -13,8 +13,7 @@ _LOGD="/root/blacklist/logs"
 _OLDFAILNB=$(cat ${_LOGD}/.ngipnumber)
 [ ! -f "${_LOGD}/.btipnumber" ] && echo '0' >${_LOGD}/.btipnumber
 _BTOLDFAILNB=$(cat ${_LOGD}/.btipnumber)
-_YOURIPHERE="5.2.64.174 127.0.0.1 10.10.10.2 10.10.10.3 92.150.30.71 92.137.128.9" # add your IPs (space separated)
-
+_YOURIPHERE="127.0.0.1 10.10.10.2 10.10.10.3" # add your IPs (space separated)
 
 ### NGinx access.log main check
 # get error logs
