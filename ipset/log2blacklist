@@ -1,11 +1,20 @@
 #!/bin/bash
+### Auto Blacklisting from logs parsing
+### 1.1 - sshd logs parsing | "ciphers request bombing"
+### 1.0 - Docker logs parsing 
+### 0.9 - counter placed to skip if no new error logs
+### 0.8 - personnal IP protection
+### 0.7 - Nginx logs parsing
 #set -x
+
+# Vars
 _LOGD="/root/blacklist/logs"
 [ ! -f "${_LOGD}/.ngipnumber" ] && echo '0' >${_LOGD}/.ngipnumber
 _OLDFAILNB=$(cat ${_LOGD}/.ngipnumber)
 [ ! -f "${_LOGD}/.btipnumber" ] && echo '0' >${_LOGD}/.btipnumber
 _BTOLDFAILNB=$(cat ${_LOGD}/.btipnumber)
 _YOURIPHERE="5.2.64.174 127.0.0.1 10.10.10.2 10.10.10.3 92.150.30.71 92.137.128.9" # add your IPs (space separated)
+
 
 ### NGinx access.log main check
 # get error logs
@@ -16,9 +25,7 @@ awk '{print $1}' ${_LOGD}/ng-black.logs | sort -n|uniq >${_LOGD}/ng-black.ips.tm
 sed -i '/127.0.0.1/d; /^200 /d; /^400 /d; /^404 /d; /^2010/d; /^2019/d; /^2020/d; /^2021/d; /^2022/d' ${_LOGD}/ng-black.ips.tmp
 > ${_LOGD}/ng-black.ips.tmp2
 for _IP in $(cat ${_LOGD}/ng-black.ips.tmp); do
-  if _ISIP $_IP; then
-    echo "$_IP" >>${_LOGD}/ng-black.ips.tmp2
-  fi
+  _ISIP $_IP && echo "$_IP" >>${_LOGD}/ng-black.ips.tmp2
 done
 # remove your IPs from list
 for YIP in $(echo $_YOURIPHERE); do
@@ -48,8 +55,7 @@ awk -F'IP: ' '/incorrect/ {print $2}' ${_LOGD}/bt-black.logs |awk '{print $1}' |
 sed -i 's/.$//g' ${_LOGD}/bt-black.ips.tmp
 > ${_LOGD}/bt-black.ips
 for _IP in $(cat ${_LOGD}/bt-black.ips.tmp); do
-  _ISIP $_IP
-  echo $_IP >> ${_LOGD}/bt-black.ips
+  _ISIP $_IP && echo $_IP >> ${_LOGD}/bt-black.ips
 done
 for YIP in $(echo $_YOURIPHERE); do
   sed -i "/$YIP/d" ${_LOGD}/bt-black.ips
@@ -72,12 +78,18 @@ fi
 ### SSHD log parse and ban (Unable to negociate cipher for now
 for _IP in $(cat /var/log/auth.log /var/log/auth.log.1|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq); do
  if [ "$(cat /var/log/auth.log /var/log/auth.log.1|grep $_IP|wc -l)" -gt 5 ]; then
+  if _ISIP $_IP; then
+  echo $_IP >> ${_LOGD}/sshd-black.ips
+  for YIP in $(echo $_YOURIPHERE); do
+   sed -i "/$YIP/d" ${_LOGD}/sshd-black.ips
+  done
     if blacklist-check $_IP >/dev/null 2>&1; then
     ipset add manual-blacklist "$_IP"
     echo "$_IP # SSHD log ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGD}/sshd-blacklist"
     # telegram alert
     telegram-send "[LTS] SSHD log Ban # $_IP"
     fi
+  fi
  fi
 done
 for _IP in $(zcat /var/log/auth.log.*.gz|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq); do
