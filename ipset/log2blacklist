@@ -15,90 +15,85 @@ _OLDFAILNB=$(cat ${_LOGD}/.ngipnumber)
 _BTOLDFAILNB=$(cat ${_LOGD}/.btipnumber)
 _YOURIPHERE="127.0.0.1 10.10.10.2 10.10.10.3" # add your IPs (space separated)
 
+
+_CHKANDBL(){
+# remove your IP if appear in lists
+for YIP in $(echo $_YOURIPHERE); do
+  sed -i "/$YIP/d" ${_LOGFILE}.ips
+done
+# check if not already in a Blacklist and add to "manual-blacklist"
+for _IP in $(cat ${_LOGFILE}.ips); do
+  if blacklist-check $_IP > /dev/null 2>&1; then
+    ipset add manual-blacklist "$_IP" 
+    echo "$_IP # $_APP ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGFILE}list"
+    # telegram alert
+    telegram-send "[LTS] $_APP log Ban # $_IP"
+  fi
+done
+}
+
+
 ### NGinx access.log main check
 # get error logs
-cat /var/log/nginx/access.log /var/log/nginx/access.log.1 |egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >${_LOGD}/ng-black.logs
-zcat /var/log/nginx/access.log*.gz|egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >>${_LOGD}/ng-black.logs
+_APP='NGinX'
+_LOGFILE="${_LOGD}/ng-black"
+cat /var/log/nginx/access.log /var/log/nginx/access.log.1 |egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >${_LOGFILE}.log
+zcat /var/log/nginx/access.log*.gz|egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >>${_LOGFILE}.log
 # get IP addresses and cleanup
-awk '{print $1}' ${_LOGD}/ng-black.logs | sort -n|uniq >${_LOGD}/ng-black.ips.tmp
-sed -i '/127.0.0.1/d; /^200 /d; /^400 /d; /^404 /d; /^2010/d; /^2019/d; /^2020/d; /^2021/d; /^2022/d' ${_LOGD}/ng-black.ips.tmp
-> ${_LOGD}/ng-black.ips.tmp2
-for _IP in $(cat ${_LOGD}/ng-black.ips.tmp); do
-  _ISIP $_IP && echo "$_IP" >>${_LOGD}/ng-black.ips.tmp2
+awk '{print $1}' ${_LOGFILE}.log | sort -n | uniq >${_LOGFILE}.tmp
+sed -i '/127.0.0.1/d; /^200 /d; /^400 /d; /^404 /d; /^2010/d; /^2019/d; /^2020/d; /^2021/d; /^2022/d' ${_LOGFILE}.tmp
+> ${_LOGFILE}.tmp2
+for _IP in $(cat ${_LOGFILE}.tmp); do
+  _ISIP $_IP && echo "$_IP" >>${_LOGFILE}.tmp2
 done
-# remove your IPs from list
-for YIP in $(echo $_YOURIPHERE); do
-  sed -i "/$YIP/d" ${_LOGD}/ng-black.ips.tmp2
-done
+cat ${_LOGFILE}.tmp2|sort -n|uniq >${_LOGFILE}.ips
+
 # stop if number of fail is same as last run
-_ACTUALFAILNB=$(cat ${_LOGD}/ng-black.ips.tmp2|sort -n|uniq |wc -l)
+_ACTUALFAILNB=$(cat ${_LOGFILE}.tmp2|sort -n|uniq |wc -l)
 if [ "$_ACTUALFAILNB" != "$_OLDFAILNB" ]; then
-  cat ${_LOGD}/ng-black.ips.tmp2|sort -n|uniq |wc -l >${_LOGD}/.ngipnumber
-  cat ${_LOGD}/ng-black.ips.tmp2|sort -n|uniq >${_LOGD}/ng-black.ips
-  # check if not already in a Blacklist and add to "manual-blacklist"
-  for _IP in $(cat ${_LOGD}/ng-black.ips); do
-    if blacklist-check $_IP > /dev/null 2>&1; then
-      ipset add manual-blacklist "$_IP" 
-      echo "$_IP # NGinX ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGD}/ng-blacklist"
-      # telegram alert
-      telegram-send "[LTS] Nginx log Ban # $_IP"
-    fi
-  done
+  cat ${_LOGFILE}.tmp2|sort -n|uniq |wc -l >${_LOGFILE}.ipnumber
+_CHKANDBL
 fi
 
 ### Docker Bitwarden log parse and auto blacklist incorrect password tryouts
 # extract bitwarden docker logs and auto ban failed passwords
-docker logs bitwarden | grep 'IP:' >${_LOGD}/bt-black.logs
+_APP='Docker'
+_LOGFILE="${_LOGD}/bt-black"
+docker logs bitwarden | grep 'IP:' >${_LOGFILE}.logs
 # get failed tryouts IPs
-awk -F'IP: ' '/incorrect/ {print $2}' ${_LOGD}/bt-black.logs |awk '{print $1}' |sort -n|uniq >${_LOGD}/bt-black.ips.tmp
-sed -i 's/.$//g' ${_LOGD}/bt-black.ips.tmp
-> ${_LOGD}/bt-black.ips
-for _IP in $(cat ${_LOGD}/bt-black.ips.tmp); do
-  _ISIP $_IP && echo $_IP >> ${_LOGD}/bt-black.ips
-done
-for YIP in $(echo $_YOURIPHERE); do
-  sed -i "/$YIP/d" ${_LOGD}/bt-black.ips
+awk -F'IP: ' '/incorrect/ {print $2}' ${_LOGFILE}.logs |awk '{print $1}' |sort -n|uniq >${_LOGFILE}.tmp
+sed -i 's/.$//g' ${_LOGFILE}.tmp
+> ${_LOGFILE}.ips
+for _IP in $(cat ${_LOGFILE}.tmp); do
+  _ISIP $_IP && echo $_IP >> ${_LOGFILE}.ips
 done
 # stop if number of fail is same as last run
-_BTACTUALFAILNB=$(cat ${_LOGD}/bt-black.ips | sort -n|uniq | wc -l)
+_BTACTUALFAILNB=$(cat ${_LOGFILE}.ips | sort -n|uniq | wc -l)
 if [ "$_BTACTUALFAILNB" != "$_BTOLDFAILNB" ]; then
-  cat ${_LOGD}/bt-black.ips | sort -n|uniq | wc -l >${_LOGD}/.btipnumber
-  # check if not already in a Blacklist and add to "manual-blacklist" blacklist
-  for _IP in $(cat ${_LOGD}/bt-black.ips); do
-    if blacklist-check $_IP >/dev/null 2>&1; then
-    ipset add manual-blacklist "$_IP"
-    echo "$_IP # Vault ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGD}/bt-blacklist"
-    # telegram alert
-    telegram-send "[LTS] Docker Vault Ban # $_IP"
-    fi
-  done
+  cat ${_LOGFILE}.ips | sort -n|uniq | wc -l >${_LOGFILE}.ipnumber
+  _CHKANDBL
 fi
 
 ### SSHD log parse and ban (Unable to negociate cipher for now
+_APP='SSHD'
+_LOGFILE="${_LOGD}/ssh-black"
+#cat /var/log/auth.log /var/log/auth.log.1|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq >${_LOGFILE}.log
+#zcat /var/log/auth.log.*.gz|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq >>${_LOGFILE}.log
+
 for _IP in $(cat /var/log/auth.log /var/log/auth.log.1|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq); do
  if [ "$(cat /var/log/auth.log /var/log/auth.log.1|grep $_IP|wc -l)" -gt 5 ]; then
-  if _ISIP $_IP; then
-  echo $_IP >> ${_LOGD}/sshd-black.ips
-  for YIP in $(echo $_YOURIPHERE); do
-   sed -i "/$YIP/d" ${_LOGD}/sshd-black.ips
-  done
-    if blacklist-check $_IP >/dev/null 2>&1; then
-    ipset add manual-blacklist "$_IP"
-    echo "$_IP # SSHD log ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGD}/sshd-blacklist"
-    # telegram alert
-    telegram-send "[LTS] SSHD log Ban # $_IP"
-    fi
-  fi
+   if _ISIP $_IP; then
+     echo $_IP >> ${_LOGFILE}.ips
+   fi
+   _CHKANDBL
  fi
 done
 for _IP in $(zcat /var/log/auth.log.*.gz|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq); do
  if [ "$(zcat /var/log/auth.log.*.gz|grep $_IP|wc -l)" -gt 5 ]; then
-    if blacklist-check $_IP >/dev/null 2>&1; then
-    ipset add manual-blacklist "$_IP"
-    echo "$_IP # SSHD log ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGD}/sshd-blacklist"
-    # telegram alert
-    telegram-send "[LTS] SSHD log Ban # $_IP"
-    fi
+   if _ISIP $_IP; then
+     echo $_IP >> ${_LOGFILE}.ips
+   fi
+   _CHKANDBL
  fi
 done
 
