@@ -1,20 +1,21 @@
 #!/bin/bash
-### Auto Blacklisting from logs parsing
-### 1.1 - sshd logs parsing | "ciphers request bombing"
-### 1.0 - Docker logs parsing 
-### 0.9 - counter placed to skip if no new error logs
-### 0.8 - personnal IP protection
-### 0.7 - Nginx logs parsing
-# Plan : adding more var and funcs
+### Multi log Parser + Autoadd to IPSet blacklist
+# 1.2 - Add first run check to scan rotated old logs
+# 1.1 - Add SSHD logs due to ciphers request bombing
+# 1.0 - Add Docker logs parsing
+# 0.9 - http request has too many POST GET tryouts, so blacklisting also http errors 400, 404, 500, 502
+# 0.8 - Complete Nginx logs parser for blacklisting scanners
 
 # Vars
 _LOGD="/root/blacklist/logs"
-[ ! -f "${_LOGD}/.ngipnumber" ] && echo '0' >${_LOGD}/.ngipnumber
+[ ! -f "${_LOGD}/sshd-blacklist" ] && SSHDFIRSTRUN=1
+[ ! -f "${_LOGD}/.ngipnumber" ] && NGFIRSTRUN=1; echo '0' >${_LOGD}/.ngipnumber
 _OLDFAILNB=$(cat ${_LOGD}/.ngipnumber)
 [ ! -f "${_LOGD}/.btipnumber" ] && echo '0' >${_LOGD}/.btipnumber
 _BTOLDFAILNB=$(cat ${_LOGD}/.btipnumber)
 _YOURIPHERE="127.0.0.1 10.10.10.2 10.10.10.3" # add your IPs (space separated)
 
+_EXECTIME(){ printf '%02dh:%02dm:%02ds\n' $(($SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)) ; }
 
 _CHKANDBL(){
 # remove your IP if appear in lists
@@ -24,7 +25,7 @@ done
 # check if not already in a Blacklist and add to "manual-blacklist"
 for _IP in $(cat ${_LOGFILE}.ips); do
   if blacklist-check $_IP > /dev/null 2>&1; then
-    ipset add manual-blacklist "$_IP" 
+    ipset add manual-blacklist "$_IP"
     echo "$_IP # $_APP ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGFILE}list"
     # telegram alert
     telegram-send "[LTS] $_APP log Ban # $_IP"
@@ -32,19 +33,18 @@ for _IP in $(cat ${_LOGFILE}.ips); do
 done
 }
 
-
 ### NGinx access.log main check
 # get error logs
 _APP='NGinX'
 _LOGFILE="${_LOGD}/ng-black"
 cat /var/log/nginx/access.log /var/log/nginx/access.log.1 |egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >${_LOGFILE}.log
-zcat /var/log/nginx/access.log*.gz|egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >>${_LOGFILE}.log
+[ "$NGFIRSTRUN" = 1 ] && zcat /var/log/nginx/access.log*.gz|egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >>${_LOGFILE}.log
 # get IP addresses and cleanup
 awk '{print $1}' ${_LOGFILE}.log | sort -n | uniq >${_LOGFILE}.tmp
 sed -i '/127.0.0.1/d; /^200 /d; /^400 /d; /^404 /d; /^2010/d; /^2019/d; /^2020/d; /^2021/d; /^2022/d' ${_LOGFILE}.tmp
 > ${_LOGFILE}.tmp2
 for _IP in $(cat ${_LOGFILE}.tmp); do
-  _ISIP $_IP && echo "$_IP" >>${_LOGFILE}.tmp2
+ipcalc-ng -cs $_IP && echo "$_IP" >>${_LOGFILE}.tmp2
 done
 cat ${_LOGFILE}.tmp2|sort -n|uniq >${_LOGFILE}.ips
 
@@ -65,7 +65,7 @@ awk -F'IP: ' '/incorrect/ {print $2}' ${_LOGFILE}.logs |awk '{print $1}' |sort -
 sed -i 's/.$//g' ${_LOGFILE}.tmp
 > ${_LOGFILE}.ips
 for _IP in $(cat ${_LOGFILE}.tmp); do
-  _ISIP $_IP && echo $_IP >> ${_LOGFILE}.ips
+ipcalc-ng -cs $_IP && echo $_IP >> ${_LOGFILE}.ips
 done
 # stop if number of fail is same as last run
 _BTACTUALFAILNB=$(cat ${_LOGFILE}.ips | sort -n|uniq | wc -l)
@@ -79,30 +79,27 @@ _APP='SSHD'
 _LOGFILE="${_LOGD}/ssh-black"
 #cat /var/log/auth.log /var/log/auth.log.1|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq >${_LOGFILE}.log
 #zcat /var/log/auth.log.*.gz|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq >>${_LOGFILE}.log
-
 for _IP in $(cat /var/log/auth.log /var/log/auth.log.1|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq); do
- if [ "$(cat /var/log/auth.log /var/log/auth.log.1|grep $_IP|wc -l)" -gt 5 ]; then
-   if _ISIP $_IP; then
-     echo $_IP >> ${_LOGFILE}.ips
-   fi
+ if [ "$(cat /var/log/auth.log /var/log/auth.log.1|grep $_IP|wc -l)" -gt 2 ]; then
+   ipcalc-ng -cs $_IP && echo $_IP >> ${_LOGFILE}.ips
    _CHKANDBL
  fi
 done
+if [ "$SSHDFIRSTRUN" = 1 ]; then
 for _IP in $(zcat /var/log/auth.log.*.gz|grep sshd|grep Unable|awk -F' with | port ' '{print $2}'|sort -n|uniq); do
  if [ "$(zcat /var/log/auth.log.*.gz|grep $_IP|wc -l)" -gt 5 ]; then
-   if _ISIP $_IP; then
-     echo $_IP >> ${_LOGFILE}.ips
-   fi
+   ipcalc-ng -cs $_IP && echo $_IP >> ${_LOGFILE}.ips
    _CHKANDBL
  fi
 done
+fi
 
 # My IP protect II : Check and protect $YOURIPHERE with ipset 'nomatch'
 ipset list manual-blacklist >${_LOGD}/.manual.blacklist
 for YIP in $(echo $_YOURIPHERE); do
-  if grep $YIP ${_LOGD}/.manual.blacklist|grep -q nomatch; then
-    echo "IP $YIP already has nomatch"
-  else
+  if ! grep $YIP ${_LOGD}/.manual.blacklist|grep -q nomatch; then
+   # echo "IP $YIP already has nomatch"
+  #else
     if grep -q $YIP ${_LOGD}/.manual.blacklist; then
       ipset del manual-blacklist $YIP
       ipset add manual-blacklist $YIP nomatch
@@ -110,3 +107,4 @@ for YIP in $(echo $_YOURIPHERE); do
     fi
   fi
 done
+#_EXECTIME
