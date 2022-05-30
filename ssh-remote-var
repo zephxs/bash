@@ -3,3 +3,4 @@ ts="command"
 
 #remote:
 ssh host "env ts=$ts ./script.sh"
+ssh host "export 'ts=$ts' cmd"
