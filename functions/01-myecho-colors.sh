@@ -13,7 +13,7 @@ _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 # ty BV @R0 ; ]
 _MYECHO () {
-  _DOTNUM=50
+  _DOTNUM=30
   if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
   _CHAINL=$(echo $@ | wc -c)
   _DOTL=$((_DOTNUM - _CHAINL))
@@ -27,7 +27,7 @@ _MYECHO () {
 }
 
 _GENEQUAL () {
-    _DOTNUM=20;
+    _DOTNUM=16;
     if [ -z "$1" ]; then
         echo "<!> need argument";
         return 1;
