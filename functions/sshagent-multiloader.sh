@@ -6,6 +6,7 @@ sshagent-loader () {
 export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
+_GENTITLE "SSH Agent MultiLoader"
 
 # func to get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _RES=$? ; }
@@ -16,7 +17,7 @@ while [ "$_RES" -ge 1 ]; do
     ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
     echo
     _MYECHO "Test SSH agent "
-    sleep 1 && _SSHAG
+    sleep 0.4 && _SSHAG
     if [ "$_RES" = 2 ]; then
       _KO .NotLoaded && rm -f $SSH_AUTH_SOCK
     elif [ "$_RES" = 1 ]; then
@@ -24,15 +25,13 @@ while [ "$_RES" -ge 1 ]; do
     fi
     ;;
   1)
-    _MYECHO "Check Keys "
-    _KO .none
-    _BLU "> Add default ssh key ? [Y/n]"
+    _BLUHTAG "Add Key: '$_MYSKEY' ? [Y/n]"
     read -s -n1
     if [[ "$REPLY" =~ [Yy] ]]; then
       [ -z "$_TIME" ] && ssh-add -q ${_MYSKEY} || ssh-add -t $_TIME ${_MYSKEY}
       _SSHAG
     else
-      _MYECHO "Loaded SSH keys " && _KO
+      _MYECHO "Loaded SSH keys " && _KO ".None"
       echo && return 0
     fi
     ;;
@@ -43,7 +42,7 @@ while [ "$_RES" -ge 1 ]; do
   esac
 done
 echo
-_GENTITLE "SSH Agent MultiLoader"
+
 _MYECHO "Test SSH Agent "
 [ $_RES = 0 ] && _OK .Running || _KO
 _KEY=$(ssh-add -l|awk -F/ '{print $NF}'|awk '{print $1}')
