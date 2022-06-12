@@ -43,3 +43,30 @@ _GENEQUAL () {
     echo -e "= \c"
     return 0
 }
+
+_GENHTAG (){ echo -e "${_BLX}###################################################${_REZ}"; }
+
+_GENTITLE () { 
+_HTNUM=52
+if [ -z "$1" ]; then
+ echo "<!> need argument"
+ return 1
+fi
+_CHAINHTL=$(echo $@ | wc -c)
+_CHAINHTL2=$((_CHAINHTL + 2))
+_HTL=$((_HTNUM - _CHAINHTL2))
+_HTL2=$((_HTL / 2))
+i=0
+while [ "$i" -lt "$_HTL2" ]; do
+ echo -e "${_BLX}#${_REZ}\c"
+ i=$((i+1))
+done
+echo -e " ${_BLX}${@}${_REZ} \c"
+i=0
+while [ "$i" -lt "$_HTL2" ]; do
+ echo -e "${_BLX}#${_REZ}\c"
+ i=$((i+1))
+done
+echo
+return 0
+}
