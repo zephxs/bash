@@ -45,6 +45,7 @@ _GENEQUAL () {
 }
 
 _GENHTAG (){ echo -e "${_BLX}###################################################${_REZ}"; }
+_BLUHTAG (){ echo -e "${_BLX}#${_REZ} $@"; }
 
 _GENTITLE () { 
 _HTNUM=52
