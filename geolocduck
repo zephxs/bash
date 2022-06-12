@@ -1,17 +1,15 @@
 #!/bin/bash
-### Show current Wan IP + Geolocation from Duckduckgo
-### 1.1 moved from awk to while loop and genequal fn
+### 1.0 show current Wan IP + Geolocation from Duckduckgo
 type _BLU >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
 _BLU "######### IP DuckDuck Geoloc #########"
-curl -s "https://duckduckgo.com/?q=ip+address" -o .tmpgeoloc
-# 
+curl -s "https://duckduckgo.com/?q=ip+address" -o /tmp/.geoloc
 #awk -F'Your IP address is |</a>","AnswerType":"ip",' '{print $2}' .tmpgeoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//; s/,//g' |awk '{print "# IP        = "$1"\n# City      = "$3"\n# ZipCode   = "$6"\n# Province  = "$4"\n# Coutry    = "$5}'
-awk -F'Your IP address is |</a>","AnswerType":"ip",' '{print $2}' .tmpgeoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//; s/,//g' >.tmpgeoloc2 #|awk '{print "# IP        = "$1"\n# City      = "$3"\n# ZipCode   = "$6"\n# Province  = "$4"\n# Coutry    = "$5}'
+awk -F'Your IP address is |</a>","AnswerType":"ip",' '{print $2}' /tmp/.geoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//; s/,//g' >/tmp/.geoloc2 
 while read _IP _A _CITY _PROVINCE _COUNTRY _ZIPCODE; do
 _GENEQUAL "IP" && echo $_IP
 _GENEQUAL "City" && echo $_CITY
 _GENEQUAL "ZipCode" && echo $_ZIPCODE
 _GENEQUAL "Province" && echo $_PROVINCE
 _GENEQUAL "Country" && echo $_COUNTRY
-done <.tmpgeoloc2
+done </tmp/.geoloc2
 echo
