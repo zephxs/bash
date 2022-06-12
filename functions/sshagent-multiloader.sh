@@ -43,7 +43,7 @@ while [ "$_RES" -ge 1 ]; do
   esac
 done
 echo
-_BLU "############### SSH Agent MultiLoader ##############"
+_GENTITLE "SSH Agent MultiLoader"
 _MYECHO "Test SSH Agent "
 [ $_RES = 0 ] && _OK .Running || _KO
 _KEY=$(ssh-add -l|awk -F/ '{print $NF}'|awk '{print $1}')
@@ -59,7 +59,7 @@ sshagent-kill () {
 # v.1.4
 # get pid from exported agent
 _SSHPID () { awk -F'=|;' '/SSH_AGENT_PID/ {print $2}' <$HOME/.ssh/.ssh-agent ; }
-_BLU "####################################################"
+_GENHTAG
 _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO "Find Agent pid "
 if [ -z "$SSH_AGENT_PID" ]; then
