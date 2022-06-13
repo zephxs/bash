@@ -67,7 +67,7 @@ done
 [ -z "$_LINENUMBER" ] && _LINENUMBER=51
 eval set -- "$_MSG"
 eval set -- "$_LINENUMBER"
-[ -z "$_TAG" ] && _TAG='echo'
+[ -z "$_TAG" ] && _TAG='dot'
 _LINEHALF=$((_LINENUMBER / 2))
 _CHAINL=$(echo "${_MSG}" | wc -c)
 
@@ -75,10 +75,10 @@ _CHAINL=$(echo "${_MSG}" | wc -c)
 #_BLUHTAG (){ echo -e "${_BLX}#${_REZ} $@"; }
 
 
-if [ "$_TAG" = 'echo' ]; then
-  _CHAINLENGH=$((_CHAINL + 1))
+if [ "$_TAG" = 'dot' ]; then
+  _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
-  echo -e "${_BLX}#${_REZ} ${_MSG}\c";
+  echo -e "${_BLX}#${_REZ} ${_MSG} \c";
   i=0
   while [ "$i" -lt "$_LINE" ]; do
     echo -e ".\c"
@@ -116,6 +116,7 @@ _CHAINHTL=$(echo "$_MSG" | wc -c)
 _CHAINLENGH=$((_CHAINHTL + 1))
 _HTL=$((_LINENUMBER - _CHAINLENGH))
 _HTL2=$((_HTL / 2))
+_HTL3=$((_LINENUMBER - _CHAINLENGH - _HTL2))
 i=0
 while [ "$i" -lt "$_HTL2" ]; do
  echo -e "${_BLX}#${_REZ}\c"
@@ -123,7 +124,7 @@ while [ "$i" -lt "$_HTL2" ]; do
 done
 echo -e " ${_BLX}${_MSG}${_REZ} \c"
 i=0
-while [ "$i" -lt "$_HTL2" ]; do
+while [ "$i" -lt "$_HTL3" ]; do
  echo -e "${_BLX}#${_REZ}\c"
  i=$((i+1))
 done
