@@ -6,7 +6,7 @@ sshagent-loader () {
 export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
-_GENTITLE "SSH Agent MultiLoader"
+_MYECHO -t "SSH Agent MultiLoader"
 
 # func to get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _RES=$? ; }
@@ -25,7 +25,7 @@ while [ "$_RES" -ge 1 ]; do
     fi
     ;;
   1)
-    _BLUHTAG "Add Key: '$_MYSKEY' ? [Y/n]"
+    _MYECHO -p "Add Key: '$_MYSKEY' ? [Y/n]"
     read -s -n1
     if [[ "$REPLY" =~ [Yy] ]]; then
       [ -z "$_TIME" ] && ssh-add -q ${_MYSKEY} || ssh-add -t $_TIME ${_MYSKEY}
@@ -58,7 +58,7 @@ sshagent-kill () {
 # v.1.4
 # get pid from exported agent
 _SSHPID () { awk -F'=|;' '/SSH_AGENT_PID/ {print $2}' <$HOME/.ssh/.ssh-agent ; }
-_GENHTAG
+_MYECHO -l
 _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO "Find Agent pid "
 if [ -z "$SSH_AGENT_PID" ]; then

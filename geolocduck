@@ -1,14 +1,14 @@
 #!/bin/bash
 ### 1.0 show current Wan IP + Geolocation from Duckduckgo
 type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
-_GENTITLE "IP DuckDuck Geoloc"
+_MYECHO -t "IP DuckDuck Geoloc"
 curl -s "https://duckduckgo.com/?q=ip+address" -o /tmp/.geoloc
 awk -F'Your IP address is |</a>","AnswerType":"ip",' '{print $2}' /tmp/.geoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//; s/,//g' >/tmp/.geoloc2 
 while read _IP _A _CITY _PROVINCE _COUNTRY _ZIPCODE; do
-_GENEQUAL "IP" && echo $_IP
-_GENEQUAL "City" && echo $_CITY
-_GENEQUAL "ZipCode" && echo $_ZIPCODE
-_GENEQUAL "Province" && echo $_PROVINCE
-_GENEQUAL "Country" && echo $_COUNTRY
+_MYECHO -e "IP" && echo $_IP
+_MYECHO -e "City" && echo $_CITY
+_MYECHO -e "ZipCode" && echo $_ZIPCODE
+_MYECHO -e "Province" && echo $_PROVINCE
+_MYECHO -e "Country" && echo $_COUNTRY
 done </tmp/.geoloc2
 echo
