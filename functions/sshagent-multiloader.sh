@@ -99,8 +99,6 @@ for i in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{p
   fi
 done
 fi
-#this one is just for style ;)
-_MYECHO -n 81 "Agent Cleanup" && _OK ".Done"
 echo
 }
 
