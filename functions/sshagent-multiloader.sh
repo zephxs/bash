@@ -15,7 +15,6 @@ while [ "$_RES" -ge 1 ]; do
   case $_RES in
   2)
     ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
-    echo
     _MYECHO -n 81 "Test SSH agent"
     sleep 0.4 && _SSHAG
     if [ "$_RES" = 2 ]; then
@@ -28,7 +27,7 @@ while [ "$_RES" -ge 1 ]; do
     _MYECHO -p "Add Key: '$_MYSKEY' ? [Y/n]"
     read -s -n1
     if [[ "$REPLY" =~ [Yy] ]]; then
-      [ -z "$_TIME" ] && ssh-add -q ${_MYSKEY} || ssh-add -t $_TIME ${_MYSKEY}
+      [ -z "$_TIME" ] && ssh-add -q ${_MYSKEY} || ssh-add -q -t $_TIME ${_MYSKEY}
       _SSHAG
     else
       _MYECHO -n 81 "Loaded SSH keys" && _KO ".None"
