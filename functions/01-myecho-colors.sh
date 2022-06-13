@@ -63,7 +63,7 @@ while (( "$#" )); do
   *) _MSG="${1}"; shift ;;
   esac
 done
-[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+#[ -z "$1" ] && { echo "Missing arguments.."; _USAGE; }
 [ -z "$_LINENUMBER" ] && _LINENUMBER=51
 [ -z "$_TAG" ] && _TAG='dot'
 _LINEHALF=$((_LINENUMBER / 2))
@@ -74,6 +74,7 @@ _CHAINL=$(echo "${_MSG}" | wc -c)
 
 
 if [ "$_TAG" = 'dot' ]; then
+[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
   echo -e "${_BLX}#${_REZ} ${_MSG} \c";
@@ -97,6 +98,7 @@ if [ "$_TAG" = 'hashtag' ]; then
 fi
 
 if [ "$_TAG" = 'equal' ]; then
+[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 3))
   _LINE=$((_LINEHALF - _CHAINLENGH));
   echo -e "${_BLX}#${_REZ} ${_MSG}\c";
@@ -110,6 +112,7 @@ if [ "$_TAG" = 'equal' ]; then
 fi
 
 if [ "$_TAG" = 'title' ]; then
+[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
 _CHAINHTL=$(echo "$_MSG" | wc -c)
 _CHAINLENGH=$((_CHAINHTL + 1))
 _HTL=$((_LINENUMBER - _CHAINLENGH))
