@@ -65,8 +65,6 @@ while (( "$#" )); do
 done
 [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
 [ -z "$_LINENUMBER" ] && _LINENUMBER=51
-eval set -- "$_MSG"
-eval set -- "$_LINENUMBER"
 [ -z "$_TAG" ] && _TAG='dot'
 _LINEHALF=$((_LINENUMBER / 2))
 _CHAINL=$(echo "${_MSG}" | wc -c)
