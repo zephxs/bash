@@ -11,58 +11,117 @@ _MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
+
 # ty BV @R0 ; ]
 _MYECHO () {
-  _DOTNUM=30
-  if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
-  _CHAINL=$(echo $@ | wc -c)
-  _DOTL=$((_DOTNUM - _CHAINL))
-  echo -e "${_BLX}#${_REZ} $@\c";
+_LINENUMBER=''
+_TAG=''
+
+_USAGE () {
+_BLU "Generate options:"
+echo -e "default 	= Dot line"
+echo -e "${_BLX}#${_REZ} [text] .................[/wait]"
+echo
+echo -e "-e|--equal 	= space line then equal sign"
+echo -e "${_BLX}#${_REZ} [text]                = [/wait]"
+echo
+echo -e "-p|--print 	= Text after one blue Hashtag"
+echo -e "${_BLX}#${_REZ} [text]"
+echo
+echo -e "-t|--title 	= Centered Title"
+echo -e "${_BLX}#############${_REZ} [text] ${_BLX}############${_REZ}"
+echo
+echo -e "-l|--line 	= Hashtag colored line"
+echo -e "${_BLX}#################################${_REZ}"
+echo
+echo -e "-n|--number XX	= Max Lengh number"
+echo; echo
+echo "Exemple: '_MYECHO -n 50 -e \"My IP\" && myip'"
+echo -e "${_BLX}#${_REZ} My IP                 = 73.74.38.1"
+echo
+echo "*** [/wait] means line does not end (scripting purposes)"
+return 1
+}
+
+
+while (( "$#" )); do
+  case "$1" in
+  -n|--num) 
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+    _LINENUMBER="$2"
+    shift 2
+    else
+    echo "Argument missing.." >&2; _USAGE
+    fi
+    ;;
+  -t|--title) _TAG='title'; shift 1 ;;
+  -l|--line) _TAG='hashtag'; shift 1 ;;
+  -e|--equal) _TAG='equal'; shift 1 ;;
+  -p|--print) _TAG='print'; shift 1 ;;
+  -h|--help) _USAGE; return 1 ;;
+  -*|--*) echo "Flag not recognised.." >&2; _USAGE ;;
+  *) _MSG="${1}"; shift ;;
+  esac
+done
+[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+[ -z "$_LINENUMBER" ] && _LINENUMBER=51
+eval set -- "$_MSG"
+eval set -- "$_LINENUMBER"
+[ -z "$_TAG" ] && _TAG='echo'
+_LINEHALF=$((_LINENUMBER / 2))
+_CHAINL=$(echo "${_MSG}" | wc -c)
+
+
+#_BLUHTAG (){ echo -e "${_BLX}#${_REZ} $@"; }
+
+
+if [ "$_TAG" = 'echo' ]; then
+  _CHAINLENGH=$((_CHAINL + 1))
+  _LINE=$((_LINEHALF - _CHAINLENGH))
+  echo -e "${_BLX}#${_REZ} ${_MSG}\c";
   i=0
-  while [ "$i" -lt "$_DOTL" ]; do
+  while [ "$i" -lt "$_LINE" ]; do
     echo -e ".\c"
     i=$((i+1))
   done
   return 0
-}
-
-_GENEQUAL () {
-    _DOTNUM=16;
-    if [ -z "$1" ]; then
-        echo "<!> need argument";
-        return 1;
-    fi;
-    _CHAINL=$(echo $@ | wc -c);
-    _DOTL=$((_DOTNUM - _CHAINL));
-    echo -e "${_BLX}#${_REZ} $@\c";
-    i=0;
-    while [ "$i" -lt "$_DOTL" ]; do
-        echo -e " \c";
-        i=$((i+1));
-    done;
-    echo -e "= \c"
-    return 0
-}
-
-_GENHTAG (){ echo -e "${_BLX}###################################################${_REZ}"; }
-_BLUHTAG (){ echo -e "${_BLX}#${_REZ} $@"; }
-
-_GENTITLE () { 
-_HTNUM=52
-if [ -z "$1" ]; then
- echo "<!> need argument"
- return 1
 fi
-_CHAINHTL=$(echo $@ | wc -c)
-_CHAINHTL2=$((_CHAINHTL + 2))
-_HTL=$((_HTNUM - _CHAINHTL2))
+
+if [ "$_TAG" = 'hashtag' ]; then
+  echo -e "${_BLX}\c"
+  i=0
+  while [ "$i" -lt "$_LINENUMBER" ]; do
+    echo -e "#\c"
+    i=$((i+1))
+  done
+  echo -e "${_REZ}"
+  return 0
+fi
+
+if [ "$_TAG" = 'equal' ]; then
+  _CHAINLENGH=$((_CHAINL + 3))
+  _LINE=$((_LINEHALF - _CHAINLENGH));
+  echo -e "${_BLX}#${_REZ} ${_MSG}\c";
+  i=0;
+  while [ "$i" -lt "$_LINE" ]; do
+      echo -e " \c";
+      i=$((i+1));
+  done;
+  echo -e "= \c"
+  return 0
+fi
+
+if [ "$_TAG" = 'title' ]; then
+_CHAINHTL=$(echo "$_MSG" | wc -c)
+_CHAINLENGH=$((_CHAINHTL + 1))
+_HTL=$((_LINENUMBER - _CHAINLENGH))
 _HTL2=$((_HTL / 2))
 i=0
 while [ "$i" -lt "$_HTL2" ]; do
  echo -e "${_BLX}#${_REZ}\c"
  i=$((i+1))
 done
-echo -e " ${_BLX}${@}${_REZ} \c"
+echo -e " ${_BLX}${_MSG}${_REZ} \c"
 i=0
 while [ "$i" -lt "$_HTL2" ]; do
  echo -e "${_BLX}#${_REZ}\c"
@@ -70,4 +129,11 @@ while [ "$i" -lt "$_HTL2" ]; do
 done
 echo
 return 0
+fi
+
+
+if [ "$_TAG" = 'print' ]; then
+echo -e "${_BLX}#${_REZ} $_MSG"
+fi
+
 }
