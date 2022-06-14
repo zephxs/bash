@@ -19,25 +19,25 @@ _TAG=''
 
 _USAGE () {
 _BLU "Generate options:"
-echo -e "default 	= Dot line"
-echo -e "${_BLX}#${_REZ} [text] .................[/wait]"
+echo -e "	-d|--dot 	= Dot line (default)"
+echo -e "${_BLX}#${_REZ} [text] ...........................[/wait]"
 echo
-echo -e "-e|--equal 	= space line then equal sign"
-echo -e "${_BLX}#${_REZ} [text]                = [/wait]"
+echo -e "	-e|--equal 	= space line then equal sign"
+echo -e "${_BLX}#${_REZ} [text]                          = [/wait]"
 echo
-echo -e "-p|--print 	= Text after one blue Hashtag"
+echo -e "	-p|--print 	= Text after Hashtag and return"
 echo -e "${_BLX}#${_REZ} [text]"
 echo
-echo -e "-t|--title 	= Centered Title"
-echo -e "${_BLX}#############${_REZ} [text] ${_BLX}############${_REZ}"
+echo -e "	-t|--title 	= Centered Title"
+echo -e "${_BLX}##################${_REZ} [text] ${_BLX}#################${_REZ}"
 echo
-echo -e "-l|--line 	= Hashtag colored line"
-echo -e "${_BLX}#################################${_REZ}"
+echo -e "	-l|--line 	= Hashtag colored line"
+echo -e "${_BLX}###########################################${_REZ}"
 echo
-echo -e "-n|--number XX	= Max Lengh number"
+echo -e "	-n|--number XX	= Max Lengh number"
 echo
-echo -e "-c|--color xxx	= Max Lengh number"
-echo -e "Available colors: 'blue' 'green' 'red' and 'purple'"
+echo -e "	-c|--color xxx	= choose color (default 'blue')"
+echo -e "	Available: 'blue' 'green' 'red' and 'purple'"
 echo; echo
 echo "Exemple: '_MYECHO -n 50 -e \"My IP\" && myip'"
 echo -e "${_BLX}#${_REZ} My IP                 = 73.74.38.1"
