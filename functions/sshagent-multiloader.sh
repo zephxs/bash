@@ -15,7 +15,7 @@ while [ "$_RES" -ge 1 ]; do
   case $_RES in
   2)
     ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
-    _MYECHO -n 81 "Test SSH agent"
+    _MYECHO "Test SSH agent"
     sleep 0.4 && _SSHAG
     if [ "$_RES" = 2 ]; then
       _KO .NotLoaded && rm -f $SSH_AUTH_SOCK
@@ -30,7 +30,7 @@ while [ "$_RES" -ge 1 ]; do
       [ -z "$_TIME" ] && ssh-add -q ${_MYSKEY} || ssh-add -q -t $_TIME ${_MYSKEY}
       _SSHAG
     else
-      _MYECHO -n 81 "Loaded SSH keys" && _KO ".None"
+      _MYECHO "Loaded SSH keys" && _KO ".None"
       echo && return 0
     fi
     ;;
@@ -41,10 +41,10 @@ while [ "$_RES" -ge 1 ]; do
   esac
 done
 
-_MYECHO -n 81 "Test SSH Agent"
+_MYECHO "Test SSH Agent"
 [ $_RES = 0 ] && _OK .Running || _KO
 _KEY=$(ssh-add -l|awk -F/ '{print $NF}'|awk '{print $1}')
-_MYECHO -n 81 "Loaded SSH keys" && _OK .${_KEY}
+_MYECHO "Loaded SSH keys" && _OK .${_KEY}
 echo
 echo
 }
@@ -58,7 +58,7 @@ sshagent-kill () {
 _SSHPID () { awk -F'=|;' '/SSH_AGENT_PID/ {print $2}' <$HOME/.ssh/.ssh-agent ; }
 _MYECHO -l
 _BLU "### [dont] Kill the ssh-agent !"
-_MYECHO -n 81 "Find Agent pid"
+_MYECHO "Find Agent pid"
 if [ -z "$SSH_AGENT_PID" ]; then
   if [ -z "$(_SSHPID)" ]; then
         _KO ".NotFound"
@@ -73,12 +73,12 @@ else
   if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".pid=$SSH_AGENT_PID"; else _KO ".NotRunning"; fi
 fi
 
-_MYECHO -n 81 "Remove Key"
+_MYECHO "Remove Key"
 if ssh-add -D &>/dev/null; then _OK; else _KO ".NoKey"; fi
-_MYECHO -n 81 "Kill Agent"
+_MYECHO "Kill Agent"
 if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
 if [ -e ${SSH_AUTH_SOCK} ]; then
-_MYECHO -n 81 "Remove Socket"
+_MYECHO "Remove Socket"
   rm -f $SSH_AUTH_SOCK &>/dev/null && _OK
 fi
 if ps --user $(id -u) -F|grep -v grep|grep -q ssh-agent; then
