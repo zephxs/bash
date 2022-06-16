@@ -1,9 +1,11 @@
 ### colors
-_REZ="\e[0m"
-_RDX="\e[1;31m"
-_BLX="\e[1;34m"
-_GRX="\e[1;32m"
-_MVX="\e[1;95m"
+_REZ='\e[0m'
+_BLK='\033[5m'
+_RDX='\e[1;31m'
+_BLX='\e[1;34m'
+_GRX='\e[1;32m'
+_MVX='\e[1;95m'
+_BLINK () { echo -e "${_BLK}${@}${_REZ}" ; }
 _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 _RED () { echo -e "${_RDX}${@}${_REZ}" ; }
 _GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
@@ -12,21 +14,28 @@ _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 
-# ty BV @R0 ; ]
+
 _MYECHO () {
-_LINELENGH='91'
+### Generate Formatted Output
+# ty Bruno V. @R0 ; ]
+# v1.1 - added colors
+# v1.0 - line lengh added
+
+
+[ -z "$_LINELENGH" ] && _LINELENGH='91'
 _TAG=''
+_MSG=''
 
 _USAGE () {
 _BLU "Generate options:"
 echo -e "	-d|--dot 	= Dot line (default)"
-echo -e "${_BLX}#${_REZ} [text] ...........................[/wait]"
+echo -e "${_BLX}#${_REZ} [text] ...........................${_BLK}[/wait]${_REZ}"
 echo
 echo -e "	-e|--equal 	= space line then equal sign"
-echo -e "${_BLX}#${_REZ} [text]                          = [/wait]"
+echo -e "${_BLX}#${_REZ} [text]                          = ${_BLK}[/wait]${_REZ}"
 echo
-echo -e "	-p|--print 	= Text after Hashtag and return"
-echo -e "${_BLX}#${_REZ} [text]"
+echo -e "	-p|--print 	= Colorize Text and return"
+echo -e "${_BLX}[test text !]${_REZ}"
 echo
 echo -e "	-t|--title 	= Centered Title"
 echo -e "${_BLX}##################${_REZ} [text] ${_BLX}#################${_REZ}"
@@ -37,12 +46,12 @@ echo
 echo -e "	-n|--number XX	= Max Lengh number"
 echo
 echo -e "	-c|--color xxx	= choose color (default 'blue')"
-echo -e "	Available: 'blue' 'green' 'red' and 'purple'"
+echo -e "	Available: ${_BLX}'blue' ${_GRX}'green' ${_RDX}'red' ${_MVX}'purple'${_REZ} and also ${_BLK}'blink'${_REZ}"
 echo; echo
 echo "Exemple: '_MYECHO -n 50 -e \"My IP\" && myip'"
 echo -e "${_BLX}#${_REZ} My IP                 = 73.74.38.1"
 echo
-echo "*** [/wait] means line does not end (scripting purposes)"
+echo "*** ${_BLK}[/wait]${_REZ} means line does not end (scripting purposes)"
 return;
 }
 
@@ -58,7 +67,7 @@ while (( "$#" )); do
     fi
     ;;
   -c|--color) 
-	  if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red) ]]; then
+	  if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink) ]]; then
     _COLORCHOICE="$2"
     shift 2
     else
@@ -87,6 +96,7 @@ if [ ! -z "$_COLORCHOICE" ]; then
   [ "$_COLORCHOICE" = green ] && _COLOR="${_GRX}"
   [ "$_COLORCHOICE" = red ] && _COLOR="${_RDX}"
   [ "$_COLORCHOICE" = purple ] && _COLOR="${_MVX}"
+  [ "$_COLORCHOICE" = blink ] && _COLOR="${_BLK}"
 else	
  _COLOR="${_BLX}"
 fi
@@ -153,7 +163,7 @@ fi
 
 
 if [ "$_TAG" = 'print' ]; then
-echo -e "${_COLOR}#${_REZ} $_MSG"
+echo -e "${_COLOR}${_MSG}${_REZ}"
 fi
 
 }
