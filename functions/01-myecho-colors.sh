@@ -21,8 +21,12 @@ _MYECHO () {
 # v1.1 - added colors
 # v1.0 - line lengh added
 
+if grep -q '_LINELENGH=' $HOME/.bashrc; then
+  _LINELENGH=$(awk -F\' '/_LINELENGH=/ {print $2}' $HOME/.bashrc)
+else
+  _LINELENGH='81'
+fi
 
-[ -z "$_LINELENGH" ] && _LINELENGH='91'
 _TAG=''
 _MSG=''
 
@@ -67,7 +71,7 @@ while (( "$#" )); do
     fi
     ;;
   -c|--color) 
-	  if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink) ]]; then
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink) ]]; then
     _COLORCHOICE="$2"
     shift 2
     else
@@ -80,7 +84,7 @@ while (( "$#" )); do
   -e|--equal) _TAG='equal'; shift 1 ;;
   -p|--print) _TAG='print'; shift 1 ;;
   -h|--help) _USAGE; return 1 ;;
-  -*|--*) echo "Flag not recognised.." >&2; _USAGE; return ;;
+  #-*|--*) echo "Flag not recognised.." >&2; _USAGE; return ;;
   *) _MSG="${1}"; shift ;;
   esac
 done
