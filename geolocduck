@@ -1,15 +1,17 @@
 #!/bin/bash
-### 1.0 show current Wan IP + Geolocation from Duckduckgo
+### 1.01 show current Wan IP + Geolocation from Duckduckgo
+# Source colors and myecho functions
 type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
 _MYECHO -t "IP DuckDuck Geoloc"
-curl -s "https://duckduckgo.com/?q=ip+address" -o /tmp/.geoloc
-awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' /tmp/.geoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//' >/tmp/.geoloc2 
-_IP=$(awk '{print $1}' /tmp/.geoloc2)
-_ZIPCODE=$(awk '{print $NF}' /tmp/.geoloc2)
-_CITY=$(awk -F' in |, ' '{print $2}' /tmp/.geoloc2)
-_PROVINCE=$(awk -F', ' '{print $2}' /tmp/.geoloc2)
-_COUNTRY=$(awk -F', ' '{print $NF}' /tmp/.geoloc2 |awk '{print $1}')
-
+# Query duckduckgo.com for "ip address" terms
+curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//' >/tmp/.geoloc
+# Set Vars for proper display
+_IP=$(awk '{print $1}' /tmp/.geoloc)
+_ZIPCODE=$(awk '{print $NF}' /tmp/.geoloc)
+_CITY=$(awk -F' in |, ' '{print $2}' /tmp/.geoloc)
+_PROVINCE=$(awk -F', ' '{print $2}' /tmp/.geoloc)
+_COUNTRY=$(awk -F', ' '{print $NF}' /tmp/.geoloc |awk '{print $1}')
+# Show results
 _MYECHO -n 34 -e "IP" && echo $_IP
 _MYECHO -n 34 -e "City" && echo $_CITY
 _MYECHO -n 34 -e "ZipCode" && echo $_ZIPCODE
