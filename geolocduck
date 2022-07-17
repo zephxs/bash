@@ -3,12 +3,16 @@
 type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
 _MYECHO -t "IP DuckDuck Geoloc"
 curl -s "https://duckduckgo.com/?q=ip+address" -o /tmp/.geoloc
-awk -F'Your IP address is |</a>","AnswerType":"ip",' '{print $2}' /tmp/.geoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//; s/,//g' >/tmp/.geoloc2 
-while read _IP _A _CITY _PROVINCE _COUNTRY _ZIPCODE; do
-_MYECHO -e "IP" && echo $_IP
-_MYECHO -e "City" && echo $_CITY
-_MYECHO -e "ZipCode" && echo $_ZIPCODE
-_MYECHO -e "Province" && echo $_PROVINCE
-_MYECHO -e "Country" && echo $_COUNTRY
-done </tmp/.geoloc2
+awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' /tmp/.geoloc |sed -r 's/<a href.*>//; s/\)//; s/\(//' >/tmp/.geoloc2 
+_IP=$(awk '{print $1}' /tmp/.geoloc2)
+_ZIPCODE=$(awk '{print $NF}' /tmp/.geoloc2)
+_CITY=$(awk -F' in |, ' '{print $2}' /tmp/.geoloc2)
+_PROVINCE=$(awk -F', ' '{print $2}' /tmp/.geoloc2)
+_COUNTRY=$(awk -F', ' '{print $NF}' /tmp/.geoloc2 |awk '{print $1}')
+
+_MYECHO -n 34 -e "IP" && echo $_IP
+_MYECHO -n 34 -e "City" && echo $_CITY
+_MYECHO -n 34 -e "ZipCode" && echo $_ZIPCODE
+_MYECHO -n 34 -e "Province" && echo $_PROVINCE
+_MYECHO -n 34 -e "Country" && echo $_COUNTRY
 echo
