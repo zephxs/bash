@@ -10,7 +10,7 @@ _IP=$(awk '{print $1}' /tmp/.geoloc)
 _ZIPCODE=$(awk '{print $NF}' /tmp/.geoloc)
 _CITY=$(awk -F' in |, ' '{print $2}' /tmp/.geoloc)
 _PROVINCE=$(awk -F', ' '{print $2}' /tmp/.geoloc)
-_COUNTRY=$(awk -F', ' '{print $NF}' /tmp/.geoloc |awk '{print $1}')
+_COUNTRY=$(awk -F', | ' '{print $(NF-1)}' /tmp/.geoloc)
 # Show results
 _MYECHO -n 34 -e "IP" && echo $_IP
 _MYECHO -n 34 -e "City" && echo $_CITY
