@@ -1,1 +1,0 @@
-find $(which yt-dlp) -mtime +1 -exec python3 -m pip install -U yt-dlp \; || python3 -m pip install -U yt-dlp
