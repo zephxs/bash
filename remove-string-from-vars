@@ -1,9 +1,0 @@
-#!/bin/bash
-string="hello-world"
-prefix="hell"
-suffix="ld"
-foo=${string#"$prefix"}
-foo=${foo%"$suffix"}
-echo "${foo}"
-echo "o-wor"
-
