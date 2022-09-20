@@ -21,11 +21,9 @@ _MYECHO () {
 # v1.1 - added colors
 # v1.0 - line lengh added
 
-if grep -q '_LINELENGH=' $HOME/.bashrc; then
-  _LINELENGH=$(awk -F\' '/_LINELENGH=/ {print $2}' $HOME/.bashrc)
-else
-  _LINELENGH='81'
-fi
+[ -f "$HOME/.myechorc" ] && . $HOME/.myechorc
+[ -z "$_LINELENGH" ] && _LINELENGH='81'
+[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 
 _TAG=''
 _MSG=''
