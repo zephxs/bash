@@ -99,8 +99,6 @@ if [ ! -z "$_COLORCHOICE" ]; then
   [ "$_COLORCHOICE" = red ] && _COLOR="${_RDX}"
   [ "$_COLORCHOICE" = purple ] && _COLOR="${_MVX}"
   [ "$_COLORCHOICE" = blink ] && _COLOR="${_BLK}"
-else	
- _COLOR="${_BLX}"
 fi
 
 if [ "$_TAG" = 'dot' ]; then
@@ -169,3 +167,5 @@ echo -e "${_COLOR}${_MSG}${_REZ}"
 fi
 
 }
+
+alias myecho='_MYECHO'
