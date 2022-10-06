@@ -1,7 +1,7 @@
-### Root directory containing all repositories
+#_REPOROOT="$HOME/repos"       # the Root directory containing all repositories
 
-#_REPOROOT="$HOME/repos"
 _REPOROOTFIND () {
+# lil fn to search for repo root dir
 if [ -z "$_REPOROOT" ]; then
   if [ -f "$HOME/.reporoot" ]; then _REPOROOT=$(cat $HOME/.reporoot); else
   cd $HOME
@@ -22,9 +22,10 @@ fi
 _BLX="\e[1;34m"
 _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 
-### pull all rep at once
+
 pullup (){
-[ -z "$_REPOROOT" ] && _REPOROOTFIND
+# pull all repos at once
+[ -f "$HOME/.reporoot" ] || && _REPOROOTFIND
 cd $_REPOROOT
 _BLU "####################################################"
 _BLU "############### Git Pull all rep UP ################"
