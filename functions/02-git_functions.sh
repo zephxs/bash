@@ -1,42 +1,31 @@
-#_REPOROOT="$HOME/repos"       # the Root directory containing all repositories
-
-_REPOROOTFIND () {
-# lil fn to search for repo root dir
-if [ -z "$_REPOROOT" ]; then
-  if [ -f "$HOME/.reporoot" ]; then _REPOROOT=$(cat $HOME/.reporoot); else
-  cd $HOME
-  find /media/ /mnt/ $HOME/ -type d -name .git >.reporoot.tmp
-  sed -i 's#/.git##g' .reporoot.tmp
-  awk 'BEGIN{FS=OFS="/"}{$NF=""; NF--; print}' .reporoot.tmp >.reporoot.dirs
-  for _TESTREP in $(uniq -d .reporoot.dirs); do 
-    [ "$(grep $_TESTREP .reporoot.dirs | wc -l)" -ge 3 ]
-    echo "$_TESTREP" >.reporoot
-  done
-  _REPOROOT=$(cat $HOME/.reporoot)
-fi
-fi
-}
-
-
 # colorize if not set
 _BLX="\e[1;34m"
 _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 
+_REPOROOTFIND () {
+# lil fn to search for repo root dirs
+if [ -z "$_REPOROOT" ]; then
+  if [ -f "$HOME/.reporoot" ]; then _REPOROOT=$(cat $HOME/.reporoot); else
+  cd $HOME
+  find /media/ /mnt/ $HOME/ -type d -name .git >.reporoot
+  sed -i 's#/.git##g' .reporoot
+fi
+fi
+}
 
 pullup (){
 # pull all repos at once
-[ -f "$HOME/.reporoot" ] || && _REPOROOTFIND
-cd $_REPOROOT
+[ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 _BLU "####################################################"
 _BLU "############### Git Pull all rep UP ################"
-for _REP in $(ls -d */); do
- _BLU "### repo = $_REP"|tr -d "/"
+for _REP in $(cat $HOME/.reporoot); do
+ _BLU "### repo = $_REP"
  cd $_REP
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git checkout $_BRANCH
   git pull
  done
-cd $_REPOROOT && echo
+echo
 done
 }
 
@@ -45,14 +34,12 @@ done
 # $HOME/repos/rep is the backup repo
 # rsync is needed to delete files that does not exist anymore
 repsync(){
-[ -z "$_REPOROOT" ] && _REPOROOTFIND
-_DESTREPO='rep'
+[ -f "$HOME/.reporoot" ] || _REPOROOTFIND
+_DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in this case
 _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
-cd $_REPOROOT
 if [ -z "$_DESTREPO" ]; then echo "Destination Repository not set.. exiting!"; exit 1; fi
-for _DIR in $(ls | grep -v $_DESTREPO); do
- cd $_REPOROOT
+for _DIR in $(cat $HOME/.reporoot | grep -v $_DESTREPO); do
  rsync -rqav --delete ${_DIR}/ ${_DESTREPO}/${_DIR}/
  cd ${_DESTREPO}/${_DIR}
  rm -rf .git README.md LICENSE
