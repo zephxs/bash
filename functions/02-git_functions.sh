@@ -4,15 +4,13 @@ _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 
 _REPOROOTFIND () {
 # lil fn to search for repo root dirs
-if [ -z "$_REPOROOT" ]; then
-  if [ -f "$HOME/.reporoot" ]; then 
-    _REPOROOT=$(cat $HOME/.reporoot)
-  else
-    cd $HOME
-    find /media/ /mnt/ $HOME/ -type d -name .git >.reporoot
-    sed -i 's#/.git##g' .reporoot
-    _REPOROOT=$(cat $HOME/.reporoot)
-  fi
+if [ -f "$HOME/.reporoot" ]; then 
+  _REPOROOT=$(cat $HOME/.reporoot)
+else
+  cd $HOME
+  find /media/ /mnt/ $HOME/ -type d -name .git >.reporoot
+  sed -i 's#/.git##g' .reporoot
+  _REPOROOT=$(cat $HOME/.reporoot)
 fi
 }
 
