@@ -1,9 +1,5 @@
-# colorize if not set
-_BLX="\e[1;34m"
-_BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
-
 _REPOROOTFIND () {
-# lil fn to search for repo root dirs
+### 0.3 - lil function to search for all repos
 if [ -f "$HOME/.reporoot" ]; then 
   _REPOROOT=$(cat $HOME/.reporoot)
 else
@@ -15,7 +11,7 @@ fi
 }
 
 pullup (){
-# pull all repos at once
+### 1.2 - pull all repos and all branches at once
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 [ -z "$_REPOROOT" ] || _REPOROOTFIND
 _BLU "####################################################"
@@ -25,17 +21,19 @@ for _REP in $_REPOROOT; do
  cd $_REP
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git checkout $_BRANCH
-  git pull && _OK ':updated' || _KO ':update failed'
+  git pull && _OK ':done' || _KO ':update failed'
  done
 echo
 done
 }
 
-### the point is to make commit and sync to backup repo that contain all sub repositories
+
+repsync(){
+### 2.1 - sync all repos to a backup repo
+# the point is to make commit and sync to backup repo that contain all sub repositories at once
 # $HOME/repos/ contains all working repositories
 # $HOME/repos/rep is the backup repo
 # rsync is needed to delete files that does not exist anymore
-repsync(){
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in this case
 _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
@@ -58,8 +56,9 @@ fi
 git push
 }
 
-# add push and sync to back repo with : gitp "my comment"
+
 gitp (){ 
+### 1.5 - add push and sync to back repo with : gitp "my comment"
 _MSG=$@
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 _BLU "####################################################"
