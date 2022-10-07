@@ -41,8 +41,8 @@ _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in t
 _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
 _BLU "####################################################"
 _BLU "############### Git Sync all rep UP ################"
-[ -z "$_DESTREPO" ] && echo "Destination Repository not set.. exiting!" && exit 1
-[ -z "$_SYNCREPOS" ] && echo "Source Repository not set.. exiting!" && exit 1
+[ -z "$_DESTREPO" ] && echo "Destination Repository not set.. exiting!" && return 1
+[ -z "$_SYNCREPOS" ] && echo "Source Repository not set.. exiting!" && return 1
 for _DIR in $_SYNCREPOS; do
  rsync -rqav --delete ${_DIR}/ ${_DESTREPO}/$(basename ${_DIR})/
  cd ${_DESTREPO}/$(basename ${_DIR})
