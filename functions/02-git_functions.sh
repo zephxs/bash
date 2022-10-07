@@ -25,7 +25,7 @@ for _REP in $_REPOROOT; do
  cd $_REP
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git checkout $_BRANCH
-  git pull && _OK "\:updated" || _KO "\:update failed"
+  git pull && _OK '\:updated' || _KO ':update failed'
  done
 echo
 done
