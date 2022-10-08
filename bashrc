@@ -32,3 +32,4 @@ _DIE () { echo $1; exit 1; }
 _EXECTIME(){ printf '%02dh:%02dm:%02ds\n' $(($SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)) ; }
 
 
+alias fn2profile='. $(type -p functions2profile.sh)'
