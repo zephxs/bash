@@ -20,7 +20,7 @@ fi
 pullup (){
 ### 1.2 - pull all repos and all branches at once
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
-[ -z "$_REPOROOT" ] || _REPOROOTFIND
+[ -z "$_REPOROOT" ] && _REPOROOTFIND
 myecho -l
 myecho -t "Git Pull all rep UP"
 for _REP in $_REPOROOT; do
