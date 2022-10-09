@@ -1,11 +1,18 @@
 _REPOROOTFIND () {
-### 0.3 - lil function to search for all repos
+### 0.5 - lil function to search for all repos
 if [ -f "$HOME/.reporoot" ]; then 
   _REPOROOT=$(cat $HOME/.reporoot)
 else
   cd $HOME
-  find /media/ /mnt/ $HOME/ -type d -name .git >.reporoot
-  sed -i 's#/.git##g' .reporoot
+  find /media/ /mnt/ $HOME/ -type d -name .git 2>/dev/null >$HOME/.reporoot
+  sed -i 's#/.git##g' $HOME/.reporoot
+  myecho -p "# Found repos:"
+  cat $HOME/.reporoot; echo
+  read -p "# Edit repos that will sync? " -n 1 -r
+  echo
+  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+    vim $HOME/.reporoot
+  fi
   _REPOROOT=$(cat $HOME/.reporoot)
 fi
 }
@@ -14,10 +21,10 @@ pullup (){
 ### 1.2 - pull all repos and all branches at once
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 [ -z "$_REPOROOT" ] || _REPOROOTFIND
-_BLU "####################################################"
-_BLU "############### Git Pull all rep UP ################"
+myecho -l
+myecho -t "Git Pull all rep UP"
 for _REP in $_REPOROOT; do
- _BLU "### repo = $_REP"
+myecho -p "### Repo = $_REP"
  cd $_REP
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git checkout $_BRANCH
@@ -37,8 +44,8 @@ repsync(){
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in this case
 _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
-_BLU "####################################################"
-_BLU "############### Git Sync all rep UP ################"
+myecho -l
+myecho -t "Git Sync all rep UP"
 [ -z "$_DESTREPO" ] && echo "Destination Repository not set.. exiting!" && return 1
 [ -z "$_SYNCREPOS" ] && echo "Source Repository not set.. exiting!" && return 1
 for _DIR in $_SYNCREPOS; do
@@ -61,9 +68,9 @@ gitp (){
 ### 1.5 - add push and sync to back repo with : gitp "my comment"
 _MSG=$@
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
-_BLU "####################################################"
-_BLU "############### Git Commit and Sync ################"
-_BLU "# Repo= $_ORIGREP  # Comment= $_MSG"
+myecho -l
+myecho -t "Git Commit and Sync"
+myecho -p "# Repo= $_ORIGREP  # Comment= $_MSG"
 git add .; git commit -m "$_MSG"; git push
 repsync
 }
