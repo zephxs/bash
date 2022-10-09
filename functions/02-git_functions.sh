@@ -1,26 +1,26 @@
+#############################################################
+### Git functions
+
+
 _REPOROOTFIND () {
-### 0.5 - lil function to search for all repos
-if [ -f "$HOME/.reporoot" ]; then 
-  _REPOROOT=$(cat $HOME/.reporoot)
-else
+### 1.1 - function to search for all repositories to sync
+# will create ~/.reporoot file to base future sync on
+if [ ! -f "$HOME/.reporoot" ]; then 
   cd $HOME
-  find /media/ /mnt/ $HOME/ -type d -name .git 2>/dev/null >$HOME/.reporoot
+  find /media/ $HOME/ -type d -name .git 2>/dev/null >$HOME/.reporoot
   sed -i 's#/.git##g' $HOME/.reporoot
   myecho -p "# Found repos:"
   cat $HOME/.reporoot; echo
   read -p "# Edit repos that will sync? " -n 1 -r
-  echo
-  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-    vim $HOME/.reporoot
-  fi
+  [[ "$REPLY" =~ ^[Yy]$ ]] && vim $HOME/.reporoot
   _REPOROOT=$(cat $HOME/.reporoot)
 fi
 }
 
+
 pullup (){
 ### 1.2 - pull all repos and all branches at once
-[ -f "$HOME/.reporoot" ] || _REPOROOTFIND
-[ -z "$_REPOROOT" ] && _REPOROOTFIND
+[ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 myecho -l
 myecho -t "Git Pull all rep UP"
 for _REP in $_REPOROOT; do
@@ -37,9 +37,7 @@ done
 
 repsync(){
 ### 2.1 - sync all repos to a backup repo
-# the point is to make commit and sync to backup repo that contain all sub repositories at once
-# $HOME/repos/ contains all working repositories
-# $HOME/repos/rep is the backup repo
+# here 'rep' is the backup repo (_DESTREPO), and all others repositories will be backed up in its own subfolder 
 # rsync is needed to delete files that does not exist anymore
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in this case
