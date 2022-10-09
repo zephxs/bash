@@ -66,7 +66,8 @@ git push
 
 gitp (){ 
 ### 1.5 - add push and sync to back repo with : gitp "my comment"
-_MSG=$@
+_COMMITMSG=$@
+[ -z "$_COMMITMSG" ] && { echo "Commit message missing" && exit 1; }
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 myecho -l
 myecho -t "Git Commit and Sync"
