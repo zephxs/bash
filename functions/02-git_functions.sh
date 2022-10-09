@@ -23,7 +23,9 @@ pullup (){
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 myecho -l
 myecho -t "Git Pull all rep UP"
+echo
 for _REP in $_REPOROOT; do
+myecho -l
 myecho -p "### Repo = $_REP"
  cd $_REP
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
