@@ -14,6 +14,7 @@ if [ ! -f "$HOME/.reporoot" ]; then
   read -p "# Edit repos that will sync? " -n 1 -r
   [[ "$REPLY" =~ ^[Yy]$ ]] && vim $HOME/.reporoot
   _REPOROOT=$(cat $HOME/.reporoot)
+  echo
 fi
 }
 
