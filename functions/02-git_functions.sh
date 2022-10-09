@@ -58,7 +58,7 @@ git add .
 if [ -z "_ORIGREP" ]; then
 git commit -m "#Sync=$(date +"%H:%M-%d.%m.%Y")"
 else
-git commit -m "#Repo=$_ORIGREP #Sync=$(date +"%H:%M-%d.%m.%Y") - $_MSG"
+git commit -m "#Repo=$_ORIGREP #Sync=$(date +"%H:%M-%d.%m.%Y") - $_COMMITMSG"
 fi
 git push
 }
@@ -67,12 +67,12 @@ git push
 gitp (){ 
 ### 1.5 - add push and sync to back repo with : gitp "my comment"
 _COMMITMSG=$@
-[ -z "$_COMMITMSG" ] && { echo "Commit message missing" && exit 1; }
+[ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 myecho -l
 myecho -t "Git Commit and Sync"
-myecho -p "# Repo= $_ORIGREP  # Comment= $_MSG"
-git add .; git commit -m "$_MSG"; git push
+myecho -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
+git add .; git commit -m "$_COMMITMSG"; git push
 repsync
 }
 
