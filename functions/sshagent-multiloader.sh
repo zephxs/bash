@@ -9,21 +9,23 @@ _TIME="28800"
 _MYECHO -t "SSH Agent MultiLoader"
 
 # func to get agent status from ssh-add exit code
-_SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _RES=$? ; }
+_SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _LOADRESULT=$? ; }
+
 _SSHAG
-while [ "$_RES" -ge 1 ]; do
-  case $_RES in
-  2)
+while [ "$_LOADRESULT" -ge 1 ]; do
+  case $_LOADRESULT in
+  2) # Agent not loaded
+    [ -e "$SSH_AUTH_SOCK" ] && rm -f $SSH_AUTH_SOCK 
     ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
     _MYECHO "Test SSH agent"
-    sleep 0.4 && _SSHAG
-    if [ "$_RES" = 2 ]; then
+    sleep 0.3 && _SSHAG
+    if [ "$_LOADRESULT" = 2 ]; then
       _KO .NotLoaded && rm -f $SSH_AUTH_SOCK
-    elif [ "$_RES" = 1 ]; then
+    elif [ "$_LOADRESULT" = 1 ]; then
       _OK .Starting && _SSHAG
     fi
     ;;
-  1)
+  1) # Agent is loaded
     _MYECHO -p "Add Key: '$_MYSKEY' ? [Y/n]"
     read -s -n1
     if [[ "$REPLY" =~ [Yy] ]]; then
@@ -42,8 +44,8 @@ while [ "$_RES" -ge 1 ]; do
 done
 
 _MYECHO "Test SSH Agent"
-[ $_RES = 0 ] && _OK .Running || _KO
-_KEY=$(ssh-add -l|awk -F/ '{print $NF}'|awk '{print $1}')
+[ $_LOADRESULT = 0 ] && _OK .Running || _KO
+_KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
 _MYECHO "Loaded SSH keys" && _OK .${_KEY}
 echo
 echo
@@ -61,9 +63,9 @@ _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO "Find Agent pid"
 if [ -z "$SSH_AGENT_PID" ]; then
   if [ -z "$(_SSHPID)" ]; then
-        _KO ".NotFound"
+    _KO ".NotFound"
   else
-export SSH_AGENT_PID=$(_SSHPID)
+    export SSH_AGENT_PID=$(_SSHPID)
   fi
   if [ ! -z "$SSH_AGENT_PID" ]; then
     if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".pid=$SSH_AGENT_PID"; else _KO ".NotRunning"; fi
@@ -72,24 +74,25 @@ else
   [ "$SSH_AGENT_PID" != "$(_SSHPID)" ] && export SSH_AGENT_PID=$(_SSHPID)
   if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ".pid=$SSH_AGENT_PID"; else _KO ".NotRunning"; fi
 fi
-
 _MYECHO "Remove Key"
 if ssh-add -D &>/dev/null; then _OK; else _KO ".NoKey"; fi
 _MYECHO "Kill Agent"
 if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
-if [ -e ${SSH_AUTH_SOCK} ]; then
 _MYECHO "Remove Socket"
-  rm -f $SSH_AUTH_SOCK &>/dev/null && _OK
+if [ -e ${SSH_AUTH_SOCK} ]; then
+  shred -zvu $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
+else
+  _OK ".NoSocketFound"
 fi
 if ps --user $(id -u) -F|grep -v grep|grep -q ssh-agent; then
 _MAV "### Search remaining agent for $(id -un)"
-for i in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{print $2}'); do
-# cry if root user
+for _PROCESSID in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{print $2}'); do
+  # cry if root user
   [ $(id -u) -eq 0 ] && _RED "Root user detected, CAUTION.."
-# stop if pid not own by user
-  ps -p $i -F|grep -v grep|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
-# stop if pid not numeric
-  [ "$i" -eq "$i" ] || continue
+  # stop if pid not own by user
+  ps -p $_PROCESSID -F|grep -v grep|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
+  # stop if pid not numeric
+  [ "$(($_PROCESSID + 0))" -eq "$_PROCESSID" ] || continue
   _RED "/!\ Check if PID match user ssh agent:"
   ps -p $i -F
   _RED "> kill PID $i ? [Y/n]"
@@ -98,6 +101,10 @@ for i in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agent|awk '{p
     kill -9 $i
   fi
 done
+# unset ssh vars
+rm -f /home/zeph/.ssh/.ssh-agent &>/dev/null
+unset $SSH_AUTH_SOCK
+unset $SSH_AGENT_PID
 fi
 echo
 }
