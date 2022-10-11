@@ -78,11 +78,9 @@ _MYECHO "Remove Key"
 if ssh-add -D &>/dev/null; then _OK; else _KO ".NoKey"; fi
 _MYECHO "Kill Agent"
 if ssh-agent -k &>/dev/null; then _OK; else _KO; fi
-_MYECHO "Remove Socket"
 if [ -e ${SSH_AUTH_SOCK} ]; then
+  _MYECHO "Remove remaining Socket"
   shred -zvu $SSH_AUTH_SOCK &>/dev/null && _OK || _KO
-else
-  _OK ".NoSocketFound"
 fi
 if ps --user $(id -u) -F|grep -v grep|grep -q ssh-agent; then
 _MAV "### Search remaining agent for $(id -un)"
