@@ -17,4 +17,5 @@ _MYECHO -n 34 -e "City" && echo $_CITY
 _MYECHO -n 34 -e "ZipCode" && echo $_ZIPCODE
 _MYECHO -n 34 -e "Province" && echo $_PROVINCE
 _MYECHO -n 34 -e "Country" && echo $_COUNTRY
+rm -f /tmp/.geolock
 echo
