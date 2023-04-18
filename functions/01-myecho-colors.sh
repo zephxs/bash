@@ -13,8 +13,6 @@ _MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
-
-
 _MYECHO () {
 ### Generate Formatted Output
 # ty Bruno V. @R0 ; ]
@@ -50,10 +48,13 @@ echo
 echo -e "	-c|--color xxx	= choose color (default 'blue')"
 echo -e "	Available: ${_BLX}'blue' ${_GRX}'green' ${_RDX}'red' ${_MVX}'purple'${_REZ} and also ${_BLK}'blink'${_REZ}"
 echo; echo
+echo "Exemple: 'myecho \"My Dir\" && pwd'"
+echo -e "${_BLX}#${_REZ} My Dir ...................................../mnt/resources"
+echo
 echo "Exemple: '_MYECHO -n 50 -e \"My IP\" && myip'"
 echo -e "${_BLX}#${_REZ} My IP                 = 73.74.38.1"
 echo
-echo "*** ${_BLK}[/wait]${_REZ} means line does not end (scripting purposes)"
+echo -e "*** ${_BLK}[/wait]${_REZ} means line does not end (scripting purposes)"
 return;
 }
 
