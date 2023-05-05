@@ -1,6 +1,6 @@
 #!/bin/bash
 ### Youtube and other streaming sites Downloader script
-### v2.2 - added format selector
+### v2.3 - move to pipx
 ### Replaced youtube-dl with yt-dlp for download speed
 ### to be placed in user path ~/bin/ and chmod +x
 
@@ -9,20 +9,23 @@
 _VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
 _ABOOKS='/data/data/com.termux/files/home/storage/shared/Music/6-audiobooks/%(title)s.%(ext)s'
 _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(ext)s'
-[ -d "$_VIDEOS" -o -d "$_ABOOKS" -o -d "$_ZIKS" ] || { echo "# Destination Folders not found, exit" && exit; } 
+# Test your paths
+[ -d "$(dirname $_VIDEOS)" -o -d "$(dirname $_ABOOKS)" -o -d "$(dirname $_ZIKS)" ] || { echo "# Destination Folders not found, exit" && exit 1; } 
 
-### AUTO INSTALLER
+### AUTO INSTALLER / UPDATER for Termux
 if type pkg >/dev/null ; then
-# required pip for easy install and update
-type pip >/dev/null || ( echo "... Installing pip" && pkg install python3; )
+# required pipx for easy install and update under venv
+type pip >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
 # install yt-dlp and update if bin older than 15 days
-find $(type -P yt-dlp) -mtime +15 -exec python3 -m pip install -U yt-dlp \; || python3 -m pip install -U yt-dlp
+find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx install -U yt-dlp \; || python3 -m pipx install -U yt-dlp
 # install screen for backgrounding - can be removed with occurences if not needed
 type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
 fi
 
+
 ### FUNCTIONS
 _MYECHO () { 
+# Nicer output
 _DOTNUM=20;
 if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
 _CHAINL=$(echo $@ | wc -c)
@@ -32,7 +35,22 @@ echo -e "$@\c"
 while [ "$i" -lt "$_DOTL" ]; do echo -e ".\c"; i=$((i+1)); done
 return 0
 }
-# Colors
+
+_FORMATSELECT (){
+# function to select format of video file to DL
+echo
+_BLU "# Select Available Video Format:"
+local IFS="
+"
+select _FORMATIDLINE in $(yt-dlp --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
+  _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
+  _GRN "# Format = $_FORMATID"
+  break
+done
+[ -z "$_FORMATID"] && ( _RED "> wrong format.." && exit 1; )
+}
+
+# Colorize
 _REZ="\e[0m"
 _RDX="\e[1;31m"
 _BLX="\e[1;34m"
@@ -46,6 +64,7 @@ _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 
+### MAIN
 # 1st arg will be used as youtube url
 clear
 _URL=$1
@@ -62,22 +81,6 @@ _MYECHO "[4] " && echo ' for Audiobooks'
 _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
 echo
-
-# function to select format of video file to DL
-_FORMATSELECT (){
-#yt-dlp --list-formats "$_URL"
-echo
-_BLU "# Select Available Video Format:"
-local IFS="
-"
-select _FORMATIDLINE in $(yt-dlp --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
-  _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
-  _GRN "# Format = $_FORMATID"
-  break
-done
-}
-
-### MAIN
 read -s -n 1 -r
 while true; do
 case "$REPLY" in
@@ -89,7 +92,6 @@ case "$REPLY" in
  2) _BLU "######################################"
   _BLU '# Video - Detecting Format..'
   _FORMATSELECT
-  [ -z "$_FORMATID"] && ( _RED "> wrong format.." && continue; )
   screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
   break
   ;;
