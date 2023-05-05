@@ -26,9 +26,9 @@ echo
 for _REP in $_REPOROOT; do
 myecho -l
 myecho -p "### Repo = $_REP"
- cd $_REP
+ cd $_REP || continue
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
-  git checkout $_BRANCH
+  git switch "$_BRANCH"
   #git pull && _OK ": #repo=\"$(basename $_REP)\" #branch=\"$_BRANCH\"" || _KO ": #repo=\"$(basename $_REP)\" #branch=\"$_BRANCH\""
   git pull && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
  done
