@@ -8,19 +8,20 @@ _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
 _MYECHO -t "SSH Agent MultiLoader"
 
-# func to get agent status from ssh-add exit code
-_SSHAG () { ssh-add -l 2>/dev/null >/dev/null ; _LOADRESULT=$? ; }
+# function to get agent status from ssh-add exit code
+_SSHAG () { ssh-add -l >/dev/null 2>&1; _LOADRESULT=$? ; }
 
 _SSHAG
 while [ "$_LOADRESULT" -ge 1 ]; do
   case $_LOADRESULT in
   2) # Agent not loaded
-    [ -e "$SSH_AUTH_SOCK" ] && rm -f $SSH_AUTH_SOCK 
-    ssh-agent -a $SSH_AUTH_SOCK >$HOME/.ssh/.ssh-agent
+    [ -e "$SSH_AUTH_SOCK" ] && rm -f "$SSH_AUTH_SOCK"
+    ssh-agent -a "$SSH_AUTH_SOCK" >$HOME/.ssh/.ssh-agent
     _MYECHO "Test SSH agent"
     sleep 0.3 && _SSHAG
     if [ "$_LOADRESULT" = 2 ]; then
-      _KO .NotLoaded && rm -f $SSH_AUTH_SOCK
+      _KO .NotLoaded && rm -f "$SSH_AUTH_SOCK"
+      return 1
     elif [ "$_LOADRESULT" = 1 ]; then
       _OK .Starting && _SSHAG
     fi
@@ -29,7 +30,7 @@ while [ "$_LOADRESULT" -ge 1 ]; do
     _MYECHO -p "Add Key: '$_MYSKEY' ? [Y/n]"
     read -s -n1
     if [[ "$REPLY" =~ [Yy] ]]; then
-      [ -z "$_TIME" ] && ssh-add -q ${_MYSKEY} || ssh-add -q -t $_TIME ${_MYSKEY}
+      [ -z "$_TIME" ] && ssh-add -q "${_MYSKEY}" || ssh-add -q -t "$_TIME" "${_MYSKEY}"
       _SSHAG
     else
       _MYECHO "Loaded SSH keys" && _KO ".None"
@@ -38,13 +39,13 @@ while [ "$_LOADRESULT" -ge 1 ]; do
     ;;
   *)
     _RED "### Unknown return code.. exit"
-    return 0
+    return 1
     ;;
   esac
 done
 
 _MYECHO "Test SSH Agent"
-[ $_LOADRESULT = 0 ] && _OK .Running || _KO
+[ "$_LOADRESULT" = 0 ] && _OK .Running || _KO
 _KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
 _MYECHO "Loaded SSH keys" && _OK .${_KEY}
 echo
