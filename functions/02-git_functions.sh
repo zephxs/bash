@@ -18,7 +18,7 @@ fi
 }
 
 pullup () {
-### 1.2 - pull all repos and all branches at once
+### 1.3 - pull all repos and all branches at once
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 myecho -l
 myecho -t "Git - Pull all Repos"
@@ -29,8 +29,9 @@ myecho -p "### Repo = $_REP"
  cd $_REP || continue
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git switch "$_BRANCH"
-  #git pull && _OK ": #repo=\"$(basename $_REP)\" #branch=\"$_BRANCH\"" || _KO ": #repo=\"$(basename $_REP)\" #branch=\"$_BRANCH\""
+  # Swap comment on the 2 next lines to suit your needs
   git pull && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
+  #git merge --ff-only $_BRANCH && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
  done
 echo
 done
