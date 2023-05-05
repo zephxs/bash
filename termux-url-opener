@@ -65,12 +65,12 @@ echo
 
 # function to select format of video file to DL
 _FORMATSELECT (){
-yt-dlp --list-formats $_URL
+#yt-dlp --list-formats "$_URL"
 echo
 _BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp --list-formats $_URL |egrep -v "^ID|------|only|^\[|image"|awk -F'|' '{print $1" "$2}'); do
+select _FORMATIDLINE in $(yt-dlp --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
   _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
   _GRN "# Format = $_FORMATID"
   break
