@@ -15,11 +15,15 @@ _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 _MYECHO () {
 ### Generate Formatted Output
-# ty Bruno V. @R0 ; ]
+# Idea from LinuxGuru Bruno V. @R0 ; ]
+# v1.2 - added tput cols for controlling line lengh
 # v1.1 - added colors
 # v1.0 - line lengh added
 
 [ -f "$HOME/.myechorc" ] && . $HOME/.myechorc
+if [ "$(tput cols)" -lt "81" ]; then
+_LINELENGH="$(tput cols)"
+fi
 [ -z "$_LINELENGH" ] && _LINELENGH='81'
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 
