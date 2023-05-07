@@ -18,19 +18,29 @@ fi
 }
 
 pullup () {
-### 1.3 - pull all repos and all branches at once
+### Pull all repos and branches at once
+### 1.4 - add verbose mode
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
+if [ "$1" == "-v" ]; then
 _MYECHO -l
 _MYECHO -t "Git - Pull all Repos"
 echo
+fi
+
 for _REP in $_REPOROOT; do
+if [ "$1" == "-v" ]; then
 _MYECHO -l
 _MYECHO -p "### Repo = $_REP"
+fi
  cd $_REP || continue
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git switch "$_BRANCH"
   # Swap comment on the 2 next lines to suit your needs
+  if [ "$1" == "-v" ]; then
   git pull && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
+  else
+  git pull >/dev/null 2>&1
+  fi
   #git merge --ff-only $_BRANCH && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
  done
 echo
