@@ -8,7 +8,7 @@ if [ ! -f "$HOME/.reporoot" ]; then
   cd $HOME
   find /media/ $HOME/ -type d -name .git 2>/dev/null >$HOME/.reporoot
   sed -i 's#/.git##g' $HOME/.reporoot
-  myecho -p "# Found repos:"
+  _MYECHO -p "# Found repos:"
   cat $HOME/.reporoot; echo
   read -p "# Edit repos that will sync? " -n 1 -r
   [[ "$REPLY" =~ ^[Yy]$ ]] && vim $HOME/.reporoot
@@ -20,12 +20,12 @@ fi
 pullup () {
 ### 1.3 - pull all repos and all branches at once
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
-myecho -l
-myecho -t "Git - Pull all Repos"
+_MYECHO -l
+_MYECHO -t "Git - Pull all Repos"
 echo
 for _REP in $_REPOROOT; do
-myecho -l
-myecho -p "### Repo = $_REP"
+_MYECHO -l
+_MYECHO -p "### Repo = $_REP"
  cd $_REP || continue
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
   git switch "$_BRANCH"
@@ -44,8 +44,8 @@ repsync () {
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in this case
 _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
-myecho -l
-myecho -t "Git - Repos Sync"
+_MYECHO -l
+_MYECHO -t "Git - Repos Sync"
 [ -z "$_DESTREPO" ] && echo "Destination Repository not set.. exiting!" && return 1
 [ -z "$_SYNCREPOS" ] && echo "Source Repository not set.. exiting!" && return 1
 for _DIR in $_SYNCREPOS; do
@@ -68,9 +68,9 @@ gitp () {
 _COMMITMSG=$@
 [ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
-myecho -l
-myecho -t "Git - Commit and Sync"
-myecho -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
+_MYECHO -l
+_MYECHO -t "Git - Commit and Sync"
+_MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
 git add .; git commit -m "$_COMMITMSG"; git push
 repsync
 }
