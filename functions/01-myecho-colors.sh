@@ -21,10 +21,10 @@ _MYECHO () {
 # v1.0 - line lengh added
 
 [ -f "$HOME/.myechorc" ] && . $HOME/.myechorc
-if [ "$(tput cols)" -lt "81" ]; then
+if [ "$(tput cols)" -lt "84" ]; then
 _LINELENGH="$(tput cols)"
 fi
-[ -z "$_LINELENGH" ] && _LINELENGH='81'
+[ -z "$_LINELENGH" ] && _LINELENGH='84'
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 
 _TAG=''
