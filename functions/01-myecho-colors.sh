@@ -20,12 +20,6 @@ _MYECHO () {
 # v1.1 - added colors
 # v1.0 - line lengh added
 
-[ -f "$HOME/.myechorc" ] && . $HOME/.myechorc
-if [ "$(tput cols)" -lt "84" ]; then
-_LINELENGH="$(tput cols)"
-fi
-[ -z "$_LINELENGH" ] && _LINELENGH='84'
-[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 
 _TAG=''
 _MSG=''
@@ -88,12 +82,19 @@ while (( "$#" )); do
   -p|--print) _TAG='print'; shift 1 ;;
   -h|--help) _USAGE; return 1 ;;
   #-*|--*) echo "Flag not recognised.." >&2; _USAGE; return ;;
-  *) _MSG="${1}"; shift ;;
+  *) _MSG="${_MSG}${1}"; shift ;;
   esac
 done
+eval set -- $_MSG
 
 [ -z "$_TAG" ] && _TAG='dot'
 
+# base settings
+[ -f "$HOME/.myechorc" ] && source $HOME/.myechorc
+if [ "$(tput cols)" -lt "84" ]; then
+_LINELENGH="$(tput cols)"
+fi
+[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 # set end of dot line @ 2/3 of line lengh
 _LINEHALF=$((_LINELENGH/3*2))
 _CHAINL=$(echo "${_MSG}" | wc -c)
@@ -110,11 +111,11 @@ if [ "$_TAG" = 'dot' ]; then
 [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
-  echo -e "${_COLOR}#${_REZ} ${_MSG} \c";
-  i=0
-  while [ "$i" -lt "$_LINE" ]; do
+  echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
+  _NVALUE=0
+  while [ "$_NVALUE" -lt "$_LINE" ]; do
     echo -e ".\c"
-    i=$((i+1))
+    _NVALUE=$((_NVALUE+1))
   done
   return 0
 fi
@@ -125,10 +126,10 @@ if [ "$_TAG" = 'equal' ]; then
   _CHAINLENGH=$((_CHAINL + 3))
   _LINE=$((_LINEHALF - _CHAINLENGH));
   echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
-  i=0;
-  while [ "$i" -lt "$_LINE" ]; do
+  _NVALUE=0;
+  while [ "$_NVALUE" -lt "$_LINE" ]; do
       echo -e " \c";
-      i=$((i+1));
+      _NVALUE=$((_NVALUE+1));
   done;
   echo -e "= \c"
   return 0
@@ -140,16 +141,16 @@ _CHAINLENGH=$((_CHAINL + 1))
 _HTL=$((_LINELENGH - _CHAINLENGH))
 _HTL2=$((_HTL /2))
 _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
-i=0
-while [ "$i" -lt "$_HTL2" ]; do
+_NVALUE=0
+while [ "$_NVALUE" -lt "$_HTL2" ]; do
  echo -e "${_COLOR}#${_REZ}\c"
- i=$((i+1))
+ _NVALUE=$((_NVALUE+1))
 done
 echo -e " ${_COLOR}${_MSG}${_REZ} \c"
-i=0
-while [ "$i" -lt "$_HTL3" ]; do
+_NVALUE=0
+while [ "$_NVALUE" -lt "$_HTL3" ]; do
  echo -e "${_COLOR}#${_REZ}\c"
- i=$((i+1))
+ _NVALUE=$((_NVALUE+1))
 done
 echo
 return 0
@@ -157,10 +158,10 @@ fi
 
 if [ "$_TAG" = 'hashtag' ]; then
   echo -e "${_COLOR}\c"
-  i=0
-  while [ "$i" -lt "$_LINELENGH" ]; do
+  _NVALUE=0
+  while [ "$_NVALUE" -lt "$_LINELENGH" ]; do
     echo -e "#\c"
-    i=$((i+1))
+    _NVALUE=$((_NVALUE+1))
   done
   echo -e "${_REZ}"
   return 0
@@ -170,7 +171,6 @@ fi
 if [ "$_TAG" = 'print' ]; then
 echo -e "${_COLOR}${_MSG}${_REZ}"
 fi
-
 }
 
 alias myecho='_MYECHO'
