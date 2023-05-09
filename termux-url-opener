@@ -69,6 +69,7 @@ _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 clear
 _URL=$1
 grep -q "^http.*" <<< ${_URL} || exit 1
+echo "$_URL - $(date '+')" >>$HOME/.yt-dlp.log
 _MAV "######################################"
 _MAV "########### Youtube-DL v2.4 ##########"
 _MAV "######################################"
