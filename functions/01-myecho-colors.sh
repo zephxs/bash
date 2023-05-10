@@ -20,7 +20,6 @@ _MYECHO () {
 # v1.1 - added colors
 # v1.0 - line lengh added
 
-
 _TAG=''
 _MSG=''
 
@@ -96,7 +95,7 @@ _LINELENGH="$(tput cols)"
 fi
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 # set end of dot line @ 2/3 of line lengh
-_LINEHALF=$((_LINELENGH/3*2))
+_LINEHALF=$((_LINELENGH/5*3))
 _CHAINL=$(echo "${_MSG}" | wc -c)
 
 if [ ! -z "$_COLORCHOICE" ]; then 
