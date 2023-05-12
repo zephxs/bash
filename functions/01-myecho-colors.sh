@@ -20,6 +20,13 @@ _MYECHO () {
 # v1.1 - added colors
 # v1.0 - line lengh added
 
+
+# base settings
+[ -f "$HOME/.myechorc" ] && source $HOME/.myechorc
+if [ "$(tput cols)" -lt "84" ]; then
+_LINELENGH="$(tput cols)"
+fi
+[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 _TAG=''
 _MSG=''
 
@@ -87,12 +94,7 @@ done
 
 [ -z "$_TAG" ] && _TAG='dot'
 
-# base settings
-[ -f "$HOME/.myechorc" ] && source $HOME/.myechorc
-if [ "$(tput cols)" -lt "84" ]; then
-_LINELENGH="$(tput cols)"
-fi
-[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
+
 # set end of dot line @ 2/3 of line lengh
 _LINEHALF=$((_LINELENGH/5*3))
 _CHAINL=$(echo "${_MSG}" | wc -c)
