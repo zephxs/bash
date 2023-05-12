@@ -1,0 +1,355 @@
+#!/bin/bash
+### wg-genconf - Generate WireGuard Config File
+### v0.6 - add check for subnet overlap
+### v0.4 - add vars for Endpoint, Port and DNS
+# To be used server side
+#
+# REQUIREMENTS: WireGuard, ipcalc-ng
+#
+# REQUIREMENTS: /etc/profile.d/01-myecho-colors.sh
+# >>> https://www.github.com/zephxs/bash/functions/01-myecho-colors.sh
+# uncomment the next 4 lines for auto download to /etc/profile.d/ 
+#  if [ ! -f /etc/profile.d/01-myecho-colors.sh ]; then
+#    wget -q https://raw.githubusercontent.com/zephxs/bash/b18e72e69ebeb3a5646f602c5879e4aeb08deed2/functions/01-myecho-colors.sh -O /etc/profile.d/01-myecho-colors.sh
+#    chmod +x /etc/profile.d/01-myecho-colors.sh
+#  fi
+
+_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+# ensure script is run as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root.."
+   exit 1
+fi
+
+### VARS ###
+_ENDPOINT=''		# Tunnel Endpoint (default)
+_PORT='31194'		# Tunnel Port (default) | empty to remove default
+_DNS='10.10.10.1'	# Tunnel DNS (default) | empty to remove default
+_WGCONFDIR='/etc/wireguard'
+
+_CLIENTKEYDIR="/root/wg-client-keys" # Client conf output Dir
+_WGCONF=''		# WireGuard Config File
+_IP=''			# Client IP
+_NAME=''		# Client Name
+_GENSERVER='false'	# Generate Server Config File
+_GENCLIENT='false'	# Generate Client Config File
+_QUIET='false'		# Verbose Mode
+
+
+if ! type -t _MYECHO &>/dev/null;then
+  . /etc/profile.d/01-myecho-colors.sh
+fi
+! type -t _MYECHO &>/dev/null && echo "Profile Output Scripts not found.. Exit" && exit 1
+
+_USAGE () {
+_MYECHO -l
+_MYECHO -t "WireGuard Generator $_VERS"
+_MYECHO -p "       [MAIN OPTIONS]"
+_MYECHO -e "-c|--client" && echo "Gen. Client Config File (Default)"
+_MYECHO -e "-s|--server" && echo "GEN Server Config File"
+_MYECHO -p "       [SUB OPTIONS]"
+_MYECHO -e "-f|--file" && echo "Server Config File (Default: /etc/wireguard/*.conf)"
+_MYECHO -e "-n|--name" && echo "Client Name"
+_MYECHO -e "-i|--ip" && echo "Client IP"
+_MYECHO -e "-e|--endpoint" && echo "Tunnel Endpoint (Default: dr34d.net)"
+_MYECHO -e "-p|--port" && echo "Tunnel Port (Default: 31194)"
+_MYECHO -e "-d|--dns" && echo "Tunnel DNS (Default: 10.10.10.1)"
+_MYECHO -e "-q|--quiet" && echo "Quiet Mode"
+_MYECHO -e "-h|--help" && echo "Help"
+echo
+_MYECHO -p "ClientExample: $(basename $0) -n client01"
+_MYECHO -p "ServerExample: $(basename $0) -s"
+} 
+
+while (($#)); do
+  case $1 in
+    -c|--client) _GENCLIENT='true'; shift 1 ;;
+    -s|--server) _GENSERVER='true'; shift 1 ;;
+    -f|--file) _WGCONF=$2; shift 2 ;;
+    -n|--name) _NAME=$2; shift 2 ;;
+    -e|--endpoint) _ENDPOINT=$2; shift 2 ;;
+    -p|--port) _PORT=$2; shift 2 ;;
+    -d|--dns) _DNS=$2; shift 2 ;;
+    -i|--ip) _IP=$2; shift 2 ;;
+    -q|--quiet) _QUIET='true'; shift 1 ;;
+    -h|--help) _USAGE && exit 0 ;;
+    *) _USAGE && exit 1 ;;
+  esac
+done
+
+[ "$_QUIET" = false ] && _MYECHO -l
+[ "$_QUIET" = false ] && _MYECHO -t "WireGuard Generator $_VERS"
+
+### CHECKS and SETTINGS
+[ "$_QUIET" = false ] && _MYECHO -t "Checks"
+# Check if WireGuard is installed
+[ "$_QUIET" = false ] && _MYECHO -e "WireGuard"
+if ! type -t wg &>/dev/null; then
+ [ "$_QUIET" = false ] && _KO ":not installed, abort.."
+ exit 1
+else
+ [ "$_QUIET" = false ] && _OK
+fi
+# Check if ipcalc-ng is installed
+[ "$_QUIET" = false ] && _MYECHO -e "ipcalc-ng"
+if ! type -t ipcalc-ng &>/dev/null; then
+ [ "$_QUIET" = false ] && _KO ":not installed, abort.."
+ exit 1
+else
+ [ "$_QUIET" = false ] && _OK
+fi
+
+# var check
+[ "$_GENSERVER" = false -a "$_GENCLIENT" = false ] && _GENCLIENT=true
+[ "$_GENSERVER" = true ] && _MYECHO -e "Generation Mode" && _OK ":Server" && _MYECHO -t "Server Mode"
+[ "$_GENCLIENT" = true ] && _MYECHO -e "Generation Mode" && _OK ":Client" && _MYECHO -t "Client Mode"
+[ "$_GENSERVER" = true -a "$_GENCLIENT" = true ] && _MYECHO -c red -p "Cannot Generate Server & Client Config File at the same time.." && exit 1
+
+
+### Set Server Mode Vars
+if [ "$_GENSERVER" = true ]; then 
+  # check server config file
+  if ls ${_WGCONFDIR}/ |grep -q .conf$; then
+    _MYECHO -c red -p "Server Config File already exists.. Exit" && exit 1
+  elif [ ! -z "$_WGCONF" ]; then
+    _WGCONFIG=${_WGCONFDIR}/${_WGCONF}.conf
+    [ "$_QUIET" = false ] && _MYECHO -e "Server Config" && _OK ":$_WGCONFIG"
+  else
+    _WGCONFIG=${_WGCONFDIR}/wg-$(hostname).conf
+    [ "$_QUIET" = false ] && _MYECHO -e "Server Config" && _OK ":$_WGCONFIG"
+  fi
+  # check IP
+  if [ ! -z "$_IP" ]; then
+    if echo $_IP | grep -q '/24'; then 
+      _IPNSUB=$_IP
+    else 
+      _IPNSUB=$_IP/24
+    fi
+  else
+    read -p "Server IP ('10.10.10.1/24' if empty) :" _IPNSUB
+    [ -z "$_IPNSUB" ] && _IPNSUB='10.10.10.1/24'
+  fi  
+  if ipcalc-ng -c $_IPNSUB; then
+    _MYECHO -e "Server IP" && _OK ":$_IPNSUB"
+  else
+    _MYECHO -c red -p "Server IP: $_IPNSUB not valid.. Exit" && exit 1
+  fi
+fi
+
+### Set Client Mode Variables
+if [ "$_GENCLIENT" = true ]; then
+  # Check if Name is set for Client Generation
+  if ls ${_WGCONFDIR}/ |grep -q .conf$; then
+    [ "$_QUIET" = false ] && _MYECHO -p "Choose Server Config File:"
+    select _WGCONF in $(find ${_WGCONFDIR}/ -type f -name '*.conf'); do
+      [ "$_QUIET" = false ] && _MYECHO -e "Server Config" && _OK ":$_WGCONF"
+      break
+    done 
+    [ ! -f "$_WGCONF" ] && _MYECHO -p -c red "Config File: $_WGCONF not a standard file.." && exit 1
+  else
+    [ "$_QUIET" = false ] && _MYECHO -e "Server Config" && _KO ":Config File Not Found, abort.."
+    exit 1
+  fi
+
+# Check if Name is set for Client Generation
+_CHECKCLIENTNAME () {
+  if grep -wq "$_TMPNAME" $_WGCONF; then
+    [ "$_QUIET" = false ] && _MYECHO -e "Client Name:" && _KO ":$_TMPNAME already exists.."
+    read -p "Enter New WireGuard Client Name: " _TMPNAME
+    if grep -wq "$_TMPNAME" $_WGCONF; then
+      _CHECKCLIENTNAME
+    else
+      _NAME=$_TMPNAME
+    fi
+  fi
+}
+
+# Check _NAME
+  if [ -z "$_NAME" ]; then
+    read -p "Enter New WireGuard Client Name: " _TMPNAME
+    _CHECKCLIENTNAME
+  else
+    _TMPNAME=$_NAME _CHECKCLIENTNAME
+  fi
+  if [ "$_QUIET" = false ]; then _MYECHO -e "Client Name:"
+  #[ "$_QUIET" = false ] && _KO ":Client Name is required.."
+    if [ -z "$_NAME" ]; then { _KO "Client Name is required.." && exit 1; } ; else _OK ":$_NAME"; fi
+  fi
+
+# Check _ENDPOINT
+  [ "$_QUIET" = false ] && _MYECHO -e "Tunnel Endpoint"
+  if [ -z "$_ENDPOINT" ]; then
+    [ "$_QUIET" = false ] && _KO ":Tunnel Endpoint is required.."
+    read -p "Enter Tunnel Endpoint: " _ENDPOINT
+    [ "$_QUIET" = false ] && _MYECHO -e "Tunnel Endpoint" && _OK ":$_ENDPOINT"
+  else 
+    [ "$_QUIET" = false ] && _OK ":$_ENDPOINT"
+  fi
+  [ -z "$_ENDPOINT" ] && _MYECHO -c red -p "Tunnel Endpoint is required.." && exit 1
+  # Check _PORT
+  [ "$_QUIET" = false ] && _MYECHO -e "Tunnel Port"
+  if [ -z "$_PORT" ]; then
+    [ "$_QUIET" = false ] && _KO ":Tunnel Port is required.."
+    read -p "Enter Tunnel Port: " _PORT
+    [ "$_QUIET" = false ] && _MYECHO -e "Tunnel Port" && _OK ":$_PORT"
+  else 
+    [ "$_QUIET" = false ] && _OK ":$_PORT"
+  fi
+  [ -z "$_PORT" ] && _MYECHO -c red -p "Tunnel Port is required.." && exit 1
+# Check _DNS
+  [ "$_QUIET" = false ] && _MYECHO -e "Tunnel DNS Server"
+  if [ -z "$_DNS" ]; then
+    [ "$_QUIET" = false ] && _KO ":DNS Server is required.."
+    read -p "Enter DNS Server: " _DNS
+    [ "$_QUIET" = false ] && _MYECHO -e "Tunnel DNS Server" && _OK ":$_DNS"
+  else 
+    [ "$_QUIET" = false ] && _OK ":$_DNS"
+  fi
+  [ -z "$_DNS" ] && _MYECHO -c red -p "DNS Server is required.." && exit 1
+fi
+
+
+### MAIN FUNCTIONS ###
+_IPFIND(){
+# search available IP from configured list
+if [ ! -z "$_IP" ]; then
+  _SSIDEIP="${_IP}/32"
+  _CSIDEIP="${_IP}/24"
+  _EVALSRVIP=$(ipcalc-ng --minaddr $_CSIDEIP | awk -F'=' '{print $2}')
+  if [ "$(awk '/^Address/ {print $NF}' $_WGCONF)" != "$_EVALSRVIP/24" ]; then
+    _MYECHO -e "IP" && _KO ":$_EVALSRVIP is not valid IP.. using default."
+  else
+    if ! grep -q $_SSIDEIP $_WGCONF; then
+    ipcalc-ng -c $_CSIDEIP && { _MYECHO -e "IP" && _OK ":$_CSIDEIP" &&  return 0; } || { _MYECHO -e "IP" && _KO ":$_CSIDEIP is not valid IP.. using default."; }
+    fi
+  fi
+fi
+ 
+[ "$_QUIET" = false ] && _MYECHO -e "IP"
+_SUBNET=$(awk '/^Address/ {print $NF}' $_WGCONF | awk -F'.' '{print $1"."$2"."$3}')
+_IPSTART="2"
+while [ "$_IPSTART" -lt "254" ]; do
+ _SSIDEIP="${_SUBNET}.${_IPSTART}/32"
+ _CSIDEIP="${_SUBNET}.${_IPSTART}/24"
+ ipcalc-ng -c $_SSIDEIP || { _MYECHO -e "IP" && echo "$_SSIDEIP is not valid IP.. Exit!" &&  exit 1; }
+ if ! grep -q $_SSIDEIP $_WGCONF; then 
+   [ "$_QUIET" = false ] && _OK ":$_CSIDEIP"
+   break
+ else
+   _IPSTART=$((_IPSTART+1))
+ fi
+done
+[ "$_QUIET" = false -a -z "$_CSIDEIP" ] && _MYECHO -e "IP" && echo "$_CSIDEIP is not available.. Exit!" && exit 1
+}
+
+_GETSRVPUBKEY (){
+_MYECHO -e "Server Public Key"
+_SRVPUBK=$(grep 'PrivateKey' ${_WGCONF} |awk '{print $NF}' | wg pubkey)
+if [ -z "$_SRVPUBK" ]; then 
+  [ "$_QUIET" = false] && _KO ":Server PubKey Not Found, abort.."
+  exit 1
+else 
+  [ "$_QUIET" = false ] && _OK ":$_SRVPUBK"
+fi
+}
+
+_GENCLIENT (){
+# generate client key pair
+[ ! -d "$_CLIENTKEYDIR" ] && mkdir -p $_CLIENTKEYDIR
+cd $_CLIENTKEYDIR
+umask 077
+_CLIENTPRIVK=$(wg genkey)
+_CLIENTPUBK=$(echo ${_CLIENTPRIVK} | wg pubkey)
+}
+
+_GENSERVER (){
+# generate server key pair
+cd $_WGCONFDIR
+umask 077
+#wg genkey | tee privatekey | wg pubkey > publickey
+_SRVPRIVK=$(wg genkey)
+_SRVPUBK=$(echo ${_SRVPRIVK} | wg pubkey)
+}
+
+_GENCLIENTPSK (){
+# create preshared key for new host
+[ -f "${_WGCONFDIR}/${_NAME}.psk" ] && { _MYECHO -p -c red "Client already Exist: $_NAME .." && exit 1; }
+cd $_WGCONFDIR
+umask 077
+wg genpsk > ${_NAME}.psk
+_CLIENTPSK=$(cat ${_WGCONFDIR}/${_NAME}.psk)
+}
+
+_ADDTOSRVCONF (){
+cat >> ${_WGCONF} <<EOF
+
+[Peer]
+# ${_NAME}
+PublicKey = ${_CLIENTPUBK}
+PreSharedKey = ${_CLIENTPSK}
+AllowedIPs = ${_SSIDEIP}
+EOF
+}
+
+_CLIENTTEMPLATE () {
+cat > ${_CLIENTKEYDIR}/${_NAME}.conf <<EOF
+[Interface]
+PrivateKey = ${_CLIENTPRIVK}
+Address = ${_CSIDEIP}
+DNS = 10.10.10.1
+
+[Peer]
+PublicKey = ${_SRVPUBK}
+PresharedKey = ${_CLIENTPSK}
+AllowedIPs = 0.0.0.0/0
+Endpoint = ${_ENDPOINT}:${_PORT}
+PersistentKeepalive = 25
+EOF
+}
+
+_SERVERTEMPLATE () {
+cat > ${_WGCONFIG} <<EOF
+[Interface]
+Address = ${_IPNSUB}
+PrivateKey = ${_SRVPRIVK}
+ListenPort = ${_PORT}
+
+EOF
+}
+
+[ "$_GENCLIENT" = true ] && _GETSRVPUBKEY && _IPFIND 
+
+# Yes/No Confirmation if not quiet
+if [ "$_QUIET" = false ]; then
+  _MYECHO -p "Confirm:" && read -p "Continue? [Y/n]: " _WGCONFIRM
+  [ "$_WGCONFIRM" = "n" ] && _MYECHO -p -c red "Aborted.." && exit 1
+fi
+# backup conf file
+[ "$_GENCLIENT" = true ] && [ -f "$_WGCONF" ] && cp -a $_WGCONF ${_WGCONF}.bak.$(date +%Y%m%d%H%M%S)
+
+# Main
+[ "$_GENSERVER" = true ] && _GENSERVER && _SERVERTEMPLATE
+[ "$_GENCLIENT" = true ] && _GENCLIENT && _GENCLIENTPSK && _ADDTOSRVCONF && _CLIENTTEMPLATE
+[ "$_QUIET" = false ] && _MYECHO -e "Generation" && _OK ":Completed"
+
+# Output Generation info
+if [ "$_GENSERVER" = true ]; then
+  _MYECHO -e "Server Private Key" && _OK ":${_SRVPRIVK}"
+  _MYECHO -e "Server Public Key" && _OK ":${_SRVPUBK}"
+  _MYECHO -e "Server Config File" && _OK ":${_WGCONFIG}"
+  echo
+  _MYECHO -c green -p "# Start Wireguard Server:"
+  echo "wg-quick up ${_WGCONFIG}"
+  _MYECHO -c green -p 'or'
+  echo "systemctl start wg-quick@${_WGCONFIG##*/}.service" |sed 's/\.conf//'
+else
+  _MYECHO -e "Client Private Key" && _OK ":${_CLIENTPRIVK}"
+  _MYECHO -e "Client Public Key" && _OK ":${_CLIENTPUBK}"
+  _MYECHO -e "Client PreShared Key" && _OK ":${_CLIENTPSK}"
+  _MYECHO -e "Client Config File" && _OK ":${_CLIENTKEYDIR}/${_NAME}.conf"
+  _MYECHO -c green -p "Copy Client Config File to Client Host and run:"
+  echo "wg-quick up ${_NAME}.conf"
+  _MYECHO -c green -p "# or copy to $_WGCONFDIR and Start Wireguard tunnel in Systemd :"
+  echo "systemctl start wg-quick@${_NAME}.service"
+fi
+
