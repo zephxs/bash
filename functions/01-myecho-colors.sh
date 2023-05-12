@@ -84,7 +84,6 @@ while (( "$#" )); do
   *) _MSG="${_MSG}${1}"; shift ;;
   esac
 done
-eval set -- $_MSG
 
 [ -z "$_TAG" ] && _TAG='dot'
 
