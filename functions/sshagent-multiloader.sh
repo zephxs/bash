@@ -6,7 +6,7 @@ sshagent-loader () {
 export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS='v1.5'
 _MYECHO -t "SSH Agent MultiLoader $_VERS"
 
 # function to get agent status from ssh-add exit code

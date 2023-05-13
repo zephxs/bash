@@ -1,0 +1,65 @@
+#!/bin/bash
+### Termux / Android Chroot Bash script modder
+### v0.2 - $TMPDIR support added 
+# mod '/etc' to '${_ETC}' and '/tmp' to '$TMPDIR' occurences in script for Android
+
+# VARS
+_ETCREPLACE="\${_ETC}"
+_TMPREPLACE="\${TMPDIR}"
+
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "# Usage: android-scriptmod <script>" && exit 0
+[ "$1" = "-v" ] || [ "$1" = "--version" ] && echo "# android-scriptmod v0.2" && exit 0
+[ -z "$1" ] && echo "# Usage: android-scriptmod <script>" && exit 1
+[ ! -f "$1" ] && echo "# File not found: $1" && exit 1
+
+_SCRIPT=$1
+echo "##############################################"
+echo "### Termux / Android Chroot Bash script modder"
+echo
+if grep -q '#!/bin/bash' ${_SCRIPT}; then
+  echo "# ${_SCRIPT} is a bash script [OK]"
+  if grep -q '/etc' ${_SCRIPT}; then
+    echo "# Script contains '/etc' occurences:"
+    grep -E '/etc' ${_SCRIPT}
+    sed -i "s/\/etc/${_ETCREPLACE}/g" ${_SCRIPT}
+    echo "# Script '/etc' occurences modded to '\${_ETC}' [OK]"
+    grep $_ETCREPLACE ${_SCRIPT}
+    echo
+      else
+    echo "# Script does not contain '/etc' occurences"
+  fi
+  if grep -q '/tmp' ${_SCRIPT}; then
+    echo "# Script contains '/tmp' occurences:"
+    grep -E '/tmp' ${_SCRIPT}
+    sed -i "s/\/tmp/${_TMPREPLACE}/g" ${_SCRIPT}
+    echo "# Script '/tmp' occurences modded to '\${TMPDIR}' [OK]"
+    grep $_TMPREPLACE ${_SCRIPT}
+    echo
+  else
+    echo "# Script does not contain '/tmp' occurences"
+  fi
+elif grep -q '#!/usr/bin/env bash' ${_SCRIPT}; then
+  echo "# $_SCRIPT is a bash script [OK]"
+  if grep -q '/etc' ${_SCRIPT}; then
+    echo "# Script contains '/etc' occurences:"
+    grep -E '/etc' ${_SCRIPT}
+    sed -i "s/\/etc/${_ETCREPLACE}/g" ${_SCRIPT}
+    echo "# Script '/etc' occurences modded to '\${_ETC}' [OK]"
+    grep $_ETCREPLACE ${_SCRIPT}
+    echo
+  else
+    echo "# Script does not contain '/etc' occurences"
+  fi
+  if grep -q '/tmp' ${_SCRIPT}; then
+    echo "# Script contains '/tmp' occurences"
+    grep -E '/tmp' ${_SCRIPT}
+    sed -i "s/\/tmp/${_TMPREPLACE}/g" ${_SCRIPT}
+    echo "# Script '/tmp' occurences modded to '\${TMPDIR}' [OK]"
+    grep $_TMPREPLACE ${_SCRIPT}
+    echo
+  else
+    echo "Script does not contain '/tmp' occurences"
+  fi
+else
+  echo "Script is not a bash script"
+fi
