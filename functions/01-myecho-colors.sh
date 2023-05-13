@@ -21,12 +21,7 @@ _MYECHO () {
 ### v1.0 - line lengh added
 # Idea from LinuxGuru Bruno V. @R0 ; ]
 
-# base settings
-[ -f "$HOME/.myechorc" ] && source $HOME/.myechorc
-if [ "$(tput cols)" -lt "84" ]; then
-_LINELENGH="$(tput cols)"
-fi
-[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
+
 _TAG=''
 _MSG=''
 
@@ -94,6 +89,17 @@ done
 
 [ -z "$_TAG" ] && _TAG='dot'
 
+# base settings
+if [ -z "$_LINELENGH" ]; then
+  if [ -f "$HOME/.myechorc" ]; then
+    source $HOME/.myechorc
+  else
+    _LINELENGH=$(tput cols)
+  fi
+fi
+[ "$_LINELENGH" -gt "$(tput cols)" ] && _LINELENGH=$(tput cols)
+# default color
+[ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 
 # set end of dot line @ 2/3 of line lengh
 _LINEHALF=$((_LINELENGH/5*3))
