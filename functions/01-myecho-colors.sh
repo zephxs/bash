@@ -10,16 +10,16 @@ _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 _RED () { echo -e "${_RDX}${@}${_REZ}" ; }
 _GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
 _MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
+_WHT () { echo -e "${_REZ}${@}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 _MYECHO () {
 ### Generate Formatted Output
+### v1.2 - added tput cols for controlling line lengh
+### v1.1 - added colors
+### v1.0 - line lengh added
 # Idea from LinuxGuru Bruno V. @R0 ; ]
-# v1.2 - added tput cols for controlling line lengh
-# v1.1 - added colors
-# v1.0 - line lengh added
-
 
 # base settings
 [ -f "$HOME/.myechorc" ] && source $HOME/.myechorc
@@ -50,7 +50,7 @@ echo
 echo -e "	-n|--number XX	= Max Lengh number"
 echo
 echo -e "	-c|--color xxx	= choose color (default 'blue')"
-echo -e "	Available: ${_BLX}'blue' ${_GRX}'green' ${_RDX}'red' ${_MVX}'purple'${_REZ} and also ${_BLK}'blink'${_REZ}"
+echo -e "	Available: ${_WHT}'white' ${_BLX}'blue' ${_GRX}'green' ${_RDX}'red' ${_MVX}'purple'${_REZ} and ${_BLK}'blink'${_REZ}"
 echo; echo
 echo "Exemple: 'myecho \"My Dir\" && pwd'"
 echo -e "${_BLX}#${_REZ} My Dir ...................................../mnt/resources"
@@ -74,7 +74,7 @@ while (( "$#" )); do
     fi
     ;;
   -c|--color) 
-    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink) ]]; then
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink|white) ]]; then
     _COLORCHOICE="$2"
     shift 2
     else
@@ -100,6 +100,7 @@ _LINEHALF=$((_LINELENGH/5*3))
 _CHAINL=$(echo "${_MSG}" | wc -c)
 
 if [ ! -z "$_COLORCHOICE" ]; then 
+  [ "$_COLORCHOICE" = white ] && _COLOR="${_WHT}"
   [ "$_COLORCHOICE" = blue ] && _COLOR="${_BLX}"
   [ "$_COLORCHOICE" = green ] && _COLOR="${_GRX}"
   [ "$_COLORCHOICE" = red ] && _COLOR="${_RDX}"
