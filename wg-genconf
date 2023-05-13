@@ -28,7 +28,7 @@ _DNS='10.10.10.1'	# Tunnel DNS (default) | empty to remove default
 _WGCONFDIR='/etc/wireguard'
 
 _CLIENTKEYDIR="/root/wg-client-keys" # Client conf output Dir
-_WGCONF=''		# WireGuard Config File
+_WGCONF=''		# WireGuard Config File (tunnel interface name
 _IP=''			# Client IP
 _NAME=''		# Client Name
 _GENSERVER='false'	# Generate Server Config File
@@ -48,7 +48,7 @@ _MYECHO -p "       [MAIN OPTIONS]"
 _MYECHO -e "-c|--client" && echo "Gen. Client Config File (Default)"
 _MYECHO -e "-s|--server" && echo "GEN Server Config File"
 _MYECHO -p "       [SUB OPTIONS]"
-_MYECHO -e "-f|--file" && echo "Server Config File (Default: /etc/wireguard/*.conf)"
+_MYECHO -e "-f|--file" && echo "Server Config/Interface name (Default: /etc/wireguard/*.conf)"
 _MYECHO -e "-n|--name" && echo "Client Name"
 _MYECHO -e "-i|--ip" && echo "Client IP"
 _MYECHO -e "-e|--endpoint" && echo "Tunnel Endpoint (Default: dr34d.net)"
@@ -113,10 +113,10 @@ if [ "$_GENSERVER" = true ]; then
     _MYECHO -c red -p "Server Config File already exists.. Exit" && exit 1
   elif [ ! -z "$_WGCONF" ]; then
     _WGCONFIG=${_WGCONFDIR}/${_WGCONF}.conf
-    [ "$_QUIET" = false ] && _MYECHO -e "Server Config" && _OK ":$_WGCONFIG"
+    [ "$_QUIET" = false ] && _MYECHO -e "Server Config/Interface" && _OK ":$_WGCONFIG"
   else
     _WGCONFIG=${_WGCONFDIR}/wg-$(hostname).conf
-    [ "$_QUIET" = false ] && _MYECHO -e "Server Config" && _OK ":$_WGCONFIG"
+    [ "$_QUIET" = false ] && _MYECHO -e "Server Config/Interface" && _OK ":$_WGCONFIG"
   fi
   # check IP
   if [ ! -z "$_IP" ]; then
