@@ -1,5 +1,6 @@
 #############################################################
 ### Git functions
+#
 
 _REPOROOTFIND () {
 ### 1.1 - function to search for all repositories to sync
@@ -20,10 +21,11 @@ fi
 pullup () {
 ### Pull all repos and branches at once
 ### 1.4 - add quiet mode
+_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 if [ "$1" != "-q" ]; then
 _MYECHO -l
-_MYECHO -t "Git - Pull all Repos"
+_MYECHO -t "Git - Pull all Repos $_VERS"
 echo
 fi
 

@@ -1,12 +1,13 @@
 ### SSH AGENT SESSION LOADER
 sshagent-loader () {
-# v1.5 - Personal ssh multi session agent 
+### v1.5 - Personal ssh multi session agent 
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
 export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
-_MYECHO -t "SSH Agent MultiLoader"
+_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_MYECHO -t "SSH Agent MultiLoader $_VERS"
 
 # function to get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l >/dev/null 2>&1; _LOADRESULT=$? ; }
