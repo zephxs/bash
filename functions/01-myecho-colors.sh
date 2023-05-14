@@ -24,6 +24,7 @@ _MYECHO () {
 
 _TAG=''
 _MSG=''
+_LINELENGH=''
 
 _USAGE () {
 _BLU "Generate options:"
