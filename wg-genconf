@@ -2,10 +2,13 @@
 ### wg-genconf - Generate WireGuard Config File
 ### v0.6 - add check for subnet overlap
 ### v0.4 - add vars for Endpoint, Port and DNS
+# Default Client IP: Search available IP from server config file (eval the last octet)  ### CHECK IF NOT BETTER TO USE WG OUTPUT DIRECTLY
+# Default Server IP: 10.10.10.1/24 
+# Default PORT and Client output dir are set in #VARS
 # To be used server side
-#
+
 # REQUIREMENTS: WireGuard, ipcalc-ng
-#
+
 # REQUIREMENTS: /etc/profile.d/01-myecho-colors.sh
 # >>> https://www.github.com/zephxs/bash/functions/01-myecho-colors.sh
 # uncomment the next 4 lines for auto download to /etc/profile.d/ 
@@ -14,7 +17,9 @@
 #    chmod +x /etc/profile.d/01-myecho-colors.sh
 #  fi
 
+# get script version
 _VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+
 # ensure script is run as root
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root.."
@@ -22,14 +27,14 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 ### VARS ###
+_WGCONFDIR='/etc/wireguard'
+_CLIENTKEYDIR="/root/wg-client-keys" # Client conf output Dir
+
 _ENDPOINT=''		# Tunnel Endpoint (default)
 _PORT='31194'		# Tunnel Port (default) | empty to remove default
-_DNS='10.10.10.1'	# Tunnel DNS (default) | empty to remove default
-_WGCONFDIR='/etc/wireguard'
-
-_CLIENTKEYDIR="/root/wg-client-keys" # Client conf output Dir
-_WGCONF=''		# WireGuard Config File (tunnel interface name
-_IP=''			# Client IP
+_DNS=''			# Tunnel DNS (default) | empty to remove default
+_WGCONF=''		# WireGuard Config File (tunnel interface name)
+_IP=''			# Server or Client IP Address depending on mode
 _NAME=''		# Client Name
 _GENSERVER='false'	# Generate Server Config File
 _GENCLIENT='false'	# Generate Client Config File
@@ -46,14 +51,14 @@ _MYECHO -l
 _MYECHO -t "WireGuard Generator $_VERS"
 _MYECHO -p "       [MAIN OPTIONS]"
 _MYECHO -e "-c|--client" && echo "Gen. Client Config File (Default)"
-_MYECHO -e "-s|--server" && echo "GEN Server Config File"
+_MYECHO -e "-s|--server" && echo "Gen. Server Config File"
 _MYECHO -p "       [SUB OPTIONS]"
+_MYECHO -e "-i|--ip" && echo "Set Server or Client IP Address"
 _MYECHO -e "-f|--file" && echo "Server Config/Interface name (Default: /etc/wireguard/*.conf)"
 _MYECHO -e "-n|--name" && echo "Client Name"
-_MYECHO -e "-i|--ip" && echo "Client IP"
-_MYECHO -e "-e|--endpoint" && echo "Tunnel Endpoint (Default: dr34d.net)"
+_MYECHO -e "-e|--endpoint" && echo "Tunnel Endpoint"
 _MYECHO -e "-p|--port" && echo "Tunnel Port (Default: 31194)"
-_MYECHO -e "-d|--dns" && echo "Tunnel DNS (Default: 10.10.10.1)"
+_MYECHO -e "-d|--dns" && echo "Tunnel DNS"
 _MYECHO -e "-q|--quiet" && echo "Quiet Mode"
 _MYECHO -e "-h|--help" && echo "Help"
 echo
