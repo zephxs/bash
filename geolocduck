@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Simple script to get current Wan IP + Geolocation from Duckduckgo
+### v1.2 - Added option to get only Wan IP (-o) and awk output (-a) if specified
 ### v1.1 - Added colors and myecho functions (available in 'functions' dir in the same repo)
 
 # set temp file location
@@ -7,6 +8,21 @@ _TMPFILE=/tmp/.geoloc
 
 # get script version
 _VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+
+
+while (( $# )); do
+  case $1 in
+    -o|--only-ip) _ONLYIP=1; shift ;;
+    -h|--help) echo "Usage: $0 [-o|--only-ip]"
+      echo "  -o|--only-ip  Get only the IP address"
+      echo "  -h|--help     Show this help"
+      exit 0
+      ;;
+    -a|--awk) _AWK=1; shift ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
 
 # Source colors and myecho functions if available
 type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
@@ -22,16 +38,29 @@ _CITY=$(awk -F' in |, ' '{print $2}' $_TMPFILE)
 _PROVINCE=$(awk -F', ' '{print $2}' $_TMPFILE)
 _COUNTRY=$(awk -F', | ' '{print $(NF-1)}' $_TMPFILE)
 
-# Show results
-if type _MYECHO >/dev/null 2>&1; then
-  _MYECHO -t "IP DuckDuck Geoloc $_VERS"
-  _MYECHO -n 34 -e "IP" && echo $_IP
-  _MYECHO -n 34 -e "City" && echo $_CITY
-  _MYECHO -n 34 -e "ZipCode" && echo $_ZIPCODE
-  _MYECHO -n 34 -e "Province" && echo $_PROVINCE
-  _MYECHO -n 34 -e "Country" && echo $_COUNTRY
-else
+# If only IP is requested, show it and exit
+if [[ $_ONLYIP -eq 1 ]]; then
+  echo $_IP
+  rm -f $_TMPFILE
+  exit 0
+fi
+
+_AWKRESULT () {
   echo "########## IP DuckDuck Geoloc $_VERS ##########"
   awk '{print "# IP: " $1"\n# City: " $2"\n# ZipCode: " $NF"\n# Province: " $2"\n# Country: " $(NF-1)}' $_TMPFILE
-fi
+}
+
+_MYRESULT () {
+  _MYECHO -n 54 -t "IP DuckDuck Geoloc $_VERS"
+  _MYECHO -n 54 -e "IP" && echo $_IP
+  _MYECHO -n 54 -e "City" && echo $_CITY
+  _MYECHO -n 54 -e "ZipCode" && echo $_ZIPCODE
+  _MYECHO -n 54 -e "Province" && echo $_PROVINCE
+  _MYECHO -n 54 -e "Country" && echo $_COUNTRY
+}
+
+# Show results
+if [[ $_AWK -eq 1 ]]; then _AWKRESULT; exit 0; fi
+if ! type _MYECHO >/dev/null 2>&1; then _AWKRESULT; else _MYRESULT; fi
+
 rm -f $_TMPFILE
