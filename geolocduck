@@ -1,23 +1,37 @@
 #!/bin/bash
-### v1.1 show current Wan IP + Geolocation from Duckduckgo
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
-# Source colors and myecho functions
-type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
+### Simple script to get current Wan IP + Geolocation from Duckduckgo
+### v1.1 - Added colors and myecho functions (available in 'functions' dir in the same repo)
+
+# set temp file location
 _TMPFILE=/tmp/.geoloc
-_MYECHO -t "IP DuckDuck Geoloc $_VERS"
+
+# get script version
+_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+
+# Source colors and myecho functions if available
+type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
+
+### Main
 # Query duckduckgo.com for "ip address" terms
 curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//' > $_TMPFILE
+
 # Set Vars for proper display
 _IP=$(awk '{print $1}' $_TMPFILE)
 _ZIPCODE=$(awk '{print $NF}' $_TMPFILE)
 _CITY=$(awk -F' in |, ' '{print $2}' $_TMPFILE)
 _PROVINCE=$(awk -F', ' '{print $2}' $_TMPFILE)
 _COUNTRY=$(awk -F', | ' '{print $(NF-1)}' $_TMPFILE)
+
 # Show results
-_MYECHO -n 34 -e "IP" && echo $_IP
-_MYECHO -n 34 -e "City" && echo $_CITY
-_MYECHO -n 34 -e "ZipCode" && echo $_ZIPCODE
-_MYECHO -n 34 -e "Province" && echo $_PROVINCE
-_MYECHO -n 34 -e "Country" && echo $_COUNTRY
+if type _MYECHO >/dev/null 2>&1; then
+  _MYECHO -t "IP DuckDuck Geoloc $_VERS"
+  _MYECHO -n 34 -e "IP" && echo $_IP
+  _MYECHO -n 34 -e "City" && echo $_CITY
+  _MYECHO -n 34 -e "ZipCode" && echo $_ZIPCODE
+  _MYECHO -n 34 -e "Province" && echo $_PROVINCE
+  _MYECHO -n 34 -e "Country" && echo $_COUNTRY
+else
+  echo "########## IP DuckDuck Geoloc $_VERS ##########"
+  awk '{print "# IP: " $1"\n# City: " $2"\n# ZipCode: " $NF"\n# Province: " $2"\n# Country: " $(NF-1)}' $_TMPFILE
+fi
 rm -f $_TMPFILE
-echo
