@@ -51,12 +51,12 @@ _AWKRESULT () {
 }
 
 _MYRESULT () {
-  _MYECHO -n 54 -t "IP DuckDuck Geoloc $_VERS"
-  _MYECHO -n 54 -e "IP" && echo $_IP
-  _MYECHO -n 54 -e "City" && echo $_CITY
-  _MYECHO -n 54 -e "ZipCode" && echo $_ZIPCODE
-  _MYECHO -n 54 -e "Province" && echo $_PROVINCE
-  _MYECHO -n 54 -e "Country" && echo $_COUNTRY
+  _MYECHO -t "IP DuckDuck Geoloc $_VERS"
+  _MYECHO -e "IP" && echo $_IP
+  _MYECHO -e "City" && echo $_CITY
+  _MYECHO -e "ZipCode" && echo $_ZIPCODE
+  _MYECHO -e "Province" && echo $_PROVINCE
+  _MYECHO -e "Country" && echo $_COUNTRY
 }
 
 # Show results
