@@ -13,7 +13,7 @@ _LOGD="/root/blacklist/logs"
 _OLDFAILNB=$(cat ${_LOGD}/.ngipnumber)
 [ ! -f "${_LOGD}/.btipnumber" ] && echo '0' >${_LOGD}/.btipnumber
 _BTOLDFAILNB=$(cat ${_LOGD}/.btipnumber)
-_YOURIPHERE="127.0.0.1 10.10.10.2 10.10.10.3" # add your IPs (space separated)
+#_YOURIPHERE="92.184.112.164 86.220.38.110 5.2.64.174 127.0.0.1 10.10.10.2 10.10.10.3 92.150.30.71 92.137.128.9" # add your IPs (space separated)
 
 _EXECTIME(){ printf '%02dh:%02dm:%02ds\n' $(($SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)) ; }
 
@@ -28,7 +28,7 @@ for _IP in $(cat ${_LOGFILE}.ips); do
     ipset add manual-blacklist "$_IP"
     echo "$_IP # $_APP ban - $(date "+%d-%m-%Y %H:%M:%S")" >> "${_LOGFILE}list"
     # telegram alert
-    telegram-send "[LTS] $_APP log Ban # $_IP"
+    telegram-send -c honeypot "[LTS] $_APP log Ban # $_IP"
   fi
 done
 }
@@ -40,38 +40,43 @@ _LOGFILE="${_LOGD}/ng-black"
 cat /var/log/nginx/access.log /var/log/nginx/access.log.1 |egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >${_LOGFILE}.log
 [ "$NGFIRSTRUN" = 1 ] && zcat /var/log/nginx/access.log*.gz|egrep -i ' 400 | 404 | 500 | 502 |masscan|CensysInspect|status|bot|nessus|netcraft|admin' >>${_LOGFILE}.log
 # get IP addresses and cleanup
-awk '{print $1}' ${_LOGFILE}.log | sort -n | uniq >${_LOGFILE}.tmp
-sed -i '/127.0.0.1/d; /^200 /d; /^400 /d; /^404 /d; /^2010/d; /^2019/d; /^2020/d; /^2021/d; /^2022/d' ${_LOGFILE}.tmp
-> ${_LOGFILE}.tmp2
-for _IP in $(cat ${_LOGFILE}.tmp); do
-ipcalc-ng -cs $_IP && echo "$_IP" >>${_LOGFILE}.tmp2
-done
-cat ${_LOGFILE}.tmp2|sort -n|uniq >${_LOGFILE}.ips
-
+if [ -s "${_LOGFILE}.log" ]; then
+  awk '{print $1}' ${_LOGFILE}.log | sort -n | uniq >${_LOGFILE}.tmp
+  sed -i '/127.0.0.1/d; /^200 /d; /^400 /d; /^404 /d; /^2010/d; /^2019/d; /^2020/d; /^2021/d; /^2022/d' ${_LOGFILE}.tmp
+  > ${_LOGFILE}.tmp2
+  for _IP in $(cat ${_LOGFILE}.tmp); do
+    ipcalc-ng -cs $_IP && echo "$_IP" >>${_LOGFILE}.tmp2
+  done
+  cat ${_LOGFILE}.tmp2|sort -n|uniq >${_LOGFILE}.ips
 # stop if number of fail is same as last run
 _ACTUALFAILNB=$(cat ${_LOGFILE}.tmp2|sort -n|uniq |wc -l)
-if [ "$_ACTUALFAILNB" != "$_OLDFAILNB" ]; then
-  cat ${_LOGFILE}.tmp2|sort -n|uniq |wc -l >${_LOGFILE}.ipnumber
-_CHKANDBL
+  if [ "$_ACTUALFAILNB" != "$_OLDFAILNB" ]; then
+    cat ${_LOGFILE}.tmp2|sort -n|uniq |wc -l >${_LOGFILE}.ipnumber
+    _CHKANDBL
+  fi
 fi
+
+
 
 ### Docker Bitwarden log parse and auto blacklist incorrect password tryouts
 # extract bitwarden docker logs and auto ban failed passwords
 _APP='Docker'
 _LOGFILE="${_LOGD}/bt-black"
 docker logs bitwarden | grep 'IP:' >${_LOGFILE}.logs
+if [ -s "${_LOGFILE}.logs" ]; then
 # get failed tryouts IPs
-awk -F'IP: ' '/incorrect/ {print $2}' ${_LOGFILE}.logs |awk '{print $1}' |sort -n|uniq >${_LOGFILE}.tmp
-sed -i 's/.$//g' ${_LOGFILE}.tmp
-> ${_LOGFILE}.ips
-for _IP in $(cat ${_LOGFILE}.tmp); do
-ipcalc-ng -cs $_IP && echo $_IP >> ${_LOGFILE}.ips
-done
+  awk -F'IP: ' '/incorrect/ {print $2}' ${_LOGFILE}.logs |awk '{print $1}' |sort -n|uniq >${_LOGFILE}.tmp
+  sed -i 's/.$//g' ${_LOGFILE}.tmp
+  > ${_LOGFILE}.ips
+  for _IP in $(cat ${_LOGFILE}.tmp); do
+    ipcalc-ng -cs $_IP && echo $_IP >> ${_LOGFILE}.ips
+  done
 # stop if number of fail is same as last run
 _BTACTUALFAILNB=$(cat ${_LOGFILE}.ips | sort -n|uniq | wc -l)
-if [ "$_BTACTUALFAILNB" != "$_BTOLDFAILNB" ]; then
-  cat ${_LOGFILE}.ips | sort -n|uniq | wc -l >${_LOGFILE}.ipnumber
-  _CHKANDBL
+  if [ "$_BTACTUALFAILNB" != "$_BTOLDFAILNB" ]; then
+    cat ${_LOGFILE}.ips | sort -n|uniq | wc -l >${_LOGFILE}.ipnumber
+    _CHKANDBL
+  fi
 fi
 
 ### SSHD log parse and ban (Unable to negociate cipher for now
@@ -94,17 +99,3 @@ for _IP in $(zcat /var/log/auth.log.*.gz|grep sshd|grep Unable|awk -F' with | po
 done
 fi
 
-# My IP protect II : Check and protect $YOURIPHERE with ipset 'nomatch'
-ipset list manual-blacklist >${_LOGD}/.manual.blacklist
-for YIP in $(echo $_YOURIPHERE); do
-  if ! grep $YIP ${_LOGD}/.manual.blacklist|grep -q nomatch; then
-   # echo "IP $YIP already has nomatch"
-  #else
-    if grep -q $YIP ${_LOGD}/.manual.blacklist; then
-      ipset del manual-blacklist $YIP
-      ipset add manual-blacklist $YIP nomatch
-      echo "your IP $YIP is added to protection"
-    fi
-  fi
-done
-#_EXECTIME
