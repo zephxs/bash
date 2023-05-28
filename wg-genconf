@@ -322,6 +322,23 @@ ListenPort = ${_PORT}
 EOF
 }
 
+_SERVERSTART () {
+if [ "$_GENSERVER" = true ]; then
+_SERVICE="wg-quick@$(basename $_WGCONFIG |sed 's/.conf/.service/')"
+else
+_SERVICE="wg-quick@$(basename $_WGCONF |sed 's/.conf/.service/')"
+fi
+if [ "$(systemctl is-active $_SERVICE)" = 0 ]; then
+  systemctl restart $_SERVICE
+  [ "$_QUIET" = false ] && _MYECHO -e "Restarting Server" && _OK ":$_SERVICE"
+else
+  systemctl start $_SERVICE
+  systemctl enable $_SERVICE
+  [ "$_QUIET" = false ] && _MYECHO -e "Starting Server" && _OK ":$_SERVICE"
+fi
+}
+
+### MAIN ###
 [ "$_GENCLIENT" = true ] && _GETSRVPUBKEY && _IPFIND 
 
 # Yes/No Confirmation if not quiet
@@ -333,8 +350,8 @@ fi
 [ "$_GENCLIENT" = true ] && [ -f "$_WGCONF" ] && cp -a $_WGCONF ${_WGCONF}.bak.$(date +%Y%m%d%H%M%S)
 
 # Main
-[ "$_GENSERVER" = true ] && _GENSERVER && _SERVERTEMPLATE
-[ "$_GENCLIENT" = true ] && _GENCLIENT && _GENCLIENTPSK && _ADDTOSRVCONF && _CLIENTTEMPLATE
+[ "$_GENSERVER" = true ] && _GENSERVER && _SERVERTEMPLATE && _SERVERSTART
+[ "$_GENCLIENT" = true ] && _GENCLIENT && _GENCLIENTPSK && _ADDTOSRVCONF && _CLIENTTEMPLATE && _SERVERSTART
 [ "$_QUIET" = false ] && _MYECHO -e "Generation" && _OK ":Completed"
 
 # Output Generation info
