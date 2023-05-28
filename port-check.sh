@@ -3,11 +3,15 @@
 ### v0.3 - added verbose mode
 ### v0.2 - added list support
 ### v0.1 - 2012-10-03 - Initial version
-# PRE-REQUISITES: nc (netcat from nmap team), telegram-send, and 01-myecho-colors.sh
+# PRE-REQUISITES: nc (netcat from nmap team), telegram-send, and 01-myecho-colors.sh (if verbose mode is enabled)
 # For using list (--list), format is: host port
 # and option -l | --list must be placed at the end of the command line as it accept argument or autosetting
 
-# get script version
+# set Variables
+_PORT="8140"
+_HOST="10.10.10.6"
+_LIST="$HOME/port-check.list"
+_VERB=""
 _VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
 
 # check if nc is installed
@@ -33,12 +37,6 @@ echo "$(basename $0) -p 22 -t myhost.net     # Check port 22/tcp"
 echo "$(basename $0) -v -l                   # Check list file (default: $HOME/port-check.list) with verbose output"
 exit 0
 }
-
-# set Variables
-_PORT="8140"
-_HOST="10.10.10.6"
-_LIST="$HOME/port-check.list"
-_VERB=""
 
 while (($#)); do
   case $1 in
