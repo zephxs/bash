@@ -60,12 +60,13 @@ done
 _ALARM(){
 [ -z "$_PORT" ] && _USAGE && exit 1
 [ -z "$_HOST" ] && _USAGE && exit 1
+[ -z "$_VERB" ] || _MYECHO "${_HOST}"
 if ! nc -zw1 $_HOST $_PORT; then
   telegram-send -c alarm "${_HOST} tcp check WARN
 # Port: ${_PORT}/tcp NOT OPEN"
-  [ -z "$_VERB" ] || _MYECHO "${_HOST}" && _KO ":${_PORT}/tcp"
+  [ -z "$_VERB" ] || _KO ":${_PORT}/tcp"
 else
-  [ -z "$_VERB" ] || _MYECHO "${_HOST}" && _OK ":${_PORT}/tcp"
+  [ -z "$_VERB" ] || _OK ":${_PORT}/tcp"
 fi
 }
 
