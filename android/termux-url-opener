@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Youtube and other streaming sites Downloader script
+### v2.4 - add Play option for launching VLC in Android
 ### v2.3 - move to pipx
 ### Replaced youtube-dl with yt-dlp for download speed
 ### to be placed in user path ~/bin/ and chmod +x
@@ -79,6 +80,7 @@ _MYECHO "[1] " && echo ' for Video (best format)'
 _MYECHO "[2] " && echo ' for Video (select format)'
 _MYECHO "[3] " && echo ' for Video (select name)'
 _MYECHO "[4] " && echo ' for Audiobooks'
+_MYECHO "[p] " && echo ' for Playing file with VLC'
 _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
 echo
@@ -107,6 +109,24 @@ case "$REPLY" in
  4) _BLU "######################################"
   _BLU '# AudioBook - Downloading..'
   screen yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
+  break
+  ;;
+ p) _BLU "######################################"
+  [ -d "$_TMPFOLDER" ] || mkdir -p "$_TMPFOLDER"
+  if [ "$(ls $_TMPFOLDER |wc -l)" -ne 1 ]; then
+    rm -rf "${_TMPFOLDER}/*"
+  fi
+  _BLU '# Read and delete'
+  yt-dlp --restrict-filenames -o "${_TMPFILE}" ${_URL}
+  if [ "$(ls $_TMPFOLDER |wc -l)" = 1 ]; then
+    _PLAYFILE=$(ls "$_TMPFOLDER")
+    _BLU "# Playing $_PLAYFILE"
+    am start -n org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity -d /storage/emulated/0/tmpdl/$_PLAYFILE
+    rm -f $_TMPFOLDER/*
+  else
+    _RED "> more than one file in folder, retry.."
+    rm -rf "${_TMPFOLDER}/*"
+  fi
   break
   ;;
  q) _BLU "######################################"
