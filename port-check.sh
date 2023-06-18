@@ -1,11 +1,17 @@
 #!/bin/bash
 ### Script to check port status and alert if not open
+### v0.4 - added friendly name
 ### v0.3 - added verbose mode
-### v0.2 - added list support
-### v0.1 - 2012-10-03 - Initial version
-# PRE-REQUISITES: nc (netcat from nmap team), telegram-send, and 01-myecho-colors.sh (if verbose mode is enabled)
-# For using list (--list), format is: host port
-# and option -l | --list must be placed at the end of the command line as it accept argument or autosetting
+#
+# PRE-REQUISITES: 
+# - nc (netcat from nmap team)
+# - telegram-send
+# - 01-myecho-colors.sh (if verbose mode is enabled)
+#
+# List (-l|--list) format is comma separated:
+# host, port, friendly name
+# 10.10.10.10, 22, My Server
+
 
 # set Variables
 _PORT="8140"
@@ -43,7 +49,9 @@ while (($#)); do
     -p|--port) _PORT=$2; shift 2 ;;
     -t|--target) _HOST=$2; shift 2 ;;
     -l|--list)
-	  if [ "$2" != "" ]; then
+	  if [ "$2" != "-*$" ]; then
+	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
+	  elif [ "$2" != "" ]; then
 	    _LIST=$2; shift 2
 	  else
 	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
@@ -60,19 +68,22 @@ done
 _ALARM(){
 [ -z "$_PORT" ] && _USAGE && exit 1
 [ -z "$_HOST" ] && _USAGE && exit 1
-[ -z "$_VERB" ] || _MYECHO "${_HOST}"
+[ -z "$_VERB" ] || _MYECHO "${_FNAME}"
 if ! nc -zw1 $_HOST $_PORT; then
-  telegram-send -c alarm "${_HOST} tcp check WARN
-# Port: ${_PORT}/tcp NOT OPEN"
-  [ -z "$_VERB" ] || _KO ":${_PORT}/tcp"
+  telegram-send -c alarm "${_FNAME} # Port Check WARN
+# IP: ${_HOST}   Port: ${_PORT}/tcp NOT OPEN"
+  [ -z "$_VERB" ] || _KO " ${_PORT}/tcp"
 else
-  [ -z "$_VERB" ] || _OK ":${_PORT}/tcp"
+  [ -z "$_VERB" ] || _OK " ${_PORT}/tcp"
 fi
 }
 
 # Main
 if [ -f "$_LIST" ]; then
-  while read _HOST _PORT; do
+  while read _LINE; do
+    _HOST=$(echo $_LINE |awk -F',' '{print $1}')
+    _PORT=$(echo $_LINE |awk -F',' '{print $2}')
+    _FNAME=$(echo $_LINE |awk -F',' '{print $NF}')
     _ALARM
   done < $_LIST
 else
