@@ -42,12 +42,12 @@ if [[ $_ONLYIP -eq 1 ]]; then
 fi
 
 _AWKRESULT () {
-  echo "########## IP DuckDuck Geoloc $_VERS ##########"
+  echo "########## IP DuckDuck Geoloc ### $_VERS ##########"
   echo "$_TMPRESULT" |awk '{print "# IP: " $1"\n# City: " $3"\n# ZipCode: " $NF"\n# Province: " $4"\n# Country: " $(NF-1)}' |sed 's/,//'
 }
 
 _MYRESULT () {
-  _MYECHO -t "IP DuckDuck Geoloc $_VERS"
+  _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
   _MYECHO -e "IP" && echo $_IP
   _MYECHO -e "City" && echo $_CITY
   _MYECHO -e "ZipCode" && echo $_ZIPCODE
