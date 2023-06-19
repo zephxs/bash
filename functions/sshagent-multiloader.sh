@@ -50,7 +50,6 @@ _MYECHO "Test SSH Agent"
 _KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
 _MYECHO "Loaded SSH keys" && _OK .${_KEY}
 echo
-echo
 }
 
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
