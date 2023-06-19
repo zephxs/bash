@@ -25,7 +25,7 @@ _VERS='v1.4'
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 if [ "$1" != "-q" ]; then
 _MYECHO -l
-_MYECHO -t "Git - Pull all Repos ##### $_VERS"
+_MYECHO -t "Git - Pull all Repos ### $_VERS"
 echo
 fi
 
