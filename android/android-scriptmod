@@ -55,26 +55,21 @@ if [ ! -f "$SCRIPT" ]; then
 fi
 
 # Modify script
-if grep -q '#!/bin/bash' "$SCRIPT" || grep -q '#!/usr/bin/env bash' "$SCRIPT"; then
-  if grep -q '/etc' "$SCRIPT"; then
-      [ "$_QUIET" = false ] && echo "# Modifying '/etc' occurences in $SCRIPT..." && grep -E '/etc' "$SCRIPT"
-    sed -i "s/\/etc/${_ETCREPLACE}/g" "$SCRIPT"
-      [ "$_QUIET" = false ] && echo "# '/etc' occurences modded to '\${_ETC}' [OK]" && grep "$_ETCREPLACE" "$SCRIPT"
-  else
-      [ "$_QUIET" = false ] && echo "# No '/etc' occurences found in $SCRIPT"
-  fi
-
-  if grep -q '/tmp' "$SCRIPT"; then
-      [ "$_QUIET" = false ] && echo "# Modifying '/tmp' occurences in $SCRIPT..." && grep -E '/tmp' "$SCRIPT"
-    sed -i "s/\/tmp/${_TMPREPLACE}/g" "$SCRIPT"
-      [ "$_QUIET" = false ] && echo "# '/tmp' occurences modded to '\${TMPDIR}' [OK]" && grep "$_TMPREPLACE" "$SCRIPT"
-  else
-      [ "$_QUIET" = false ] && echo "# No '/tmp' occurences found in $SCRIPT"
-  fi
-
-    [ "$_QUIET" = false ] && echo "### Modifications complete."
+if grep -q '/etc' "$SCRIPT"; then
+    [ "$_QUIET" = false ] && echo "# Modifying '/etc' occurences in $SCRIPT..." && grep -E '/etc' "$SCRIPT"
+  sed -i "s/\/etc/${_ETCREPLACE}/g" "$SCRIPT"
+    [ "$_QUIET" = false ] && echo "# '/etc' occurences modded to '\${_ETC}' [OK]" && grep "$_ETCREPLACE" "$SCRIPT"
 else
-  echo "Error: $SCRIPT is not a bash script"
-  exit 1
+    [ "$_QUIET" = false ] && echo "# No '/etc' occurences found in $SCRIPT"
 fi
+
+if grep -q '/tmp' "$SCRIPT"; then
+    [ "$_QUIET" = false ] && echo "# Modifying '/tmp' occurences in $SCRIPT..." && grep -E '/tmp' "$SCRIPT"
+  sed -i "s/\/tmp/${_TMPREPLACE}/g" "$SCRIPT"
+    [ "$_QUIET" = false ] && echo "# '/tmp' occurences modded to '\${TMPDIR}' [OK]" && grep "$_TMPREPLACE" "$SCRIPT"
+else
+    [ "$_QUIET" = false ] && echo "# No '/tmp' occurences found in $SCRIPT"
+fi
+
+[ "$_QUIET" = false ] && echo "### Modifications complete."
 
