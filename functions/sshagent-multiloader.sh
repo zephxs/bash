@@ -7,7 +7,7 @@ export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
 _VERS='v1.5'
-_MYECHO -t "SSH Agent MultiLoader ### $_VERS"
+_MYECHO -t "SSH Agent MultiSession ### $_VERS"
 
 # function to get agent status from ssh-add exit code
 _SSHAG () { ssh-add -l >/dev/null 2>&1; _LOADRESULT=$? ; }
