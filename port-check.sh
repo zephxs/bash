@@ -70,7 +70,8 @@ _ALARM(){
 [ -z "$_HOST" ] && _USAGE && exit 1
 [ -z "$_VERB" ] || _MYECHO "${_FNAME}"
 if ! nc -zw1 $_HOST $_PORT; then
-  telegram-send -c alarm "${_FNAME} # Port Check WARN
+  telegram-send -c alarm "${_FNAME}
+# Port Check Warning!
 # IP: ${_HOST}   Port: ${_PORT}/tcp NOT OPEN"
   [ -z "$_VERB" ] || _KO " ${_PORT}/tcp"
 else
