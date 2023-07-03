@@ -21,10 +21,10 @@ while [ "$_LOADRESULT" -ge 1 ]; do
     _MYECHO "Test SSH agent"
     sleep 0.3 && _SSHAG
     if [ "$_LOADRESULT" = 2 ]; then
-      _KO .NotLoaded && rm -f "$SSH_AUTH_SOCK"
+      _KO ':NotLoaded' && rm -f "$SSH_AUTH_SOCK"
       return 1
     elif [ "$_LOADRESULT" = 1 ]; then
-      _OK .Starting && _SSHAG
+      _OK ':Starting' && _SSHAG
     fi
     ;;
   1) # Agent is loaded
@@ -34,7 +34,7 @@ while [ "$_LOADRESULT" -ge 1 ]; do
       [ -z "$_TIME" ] && ssh-add -q "${_MYSKEY}" || ssh-add -q -t "$_TIME" "${_MYSKEY}"
       _SSHAG
     else
-      _MYECHO "Loaded SSH keys" && _KO ".None"
+      _MYECHO "Loaded SSH keys" && _KO ':None'
       echo && return 0
     fi
     ;;
@@ -48,7 +48,7 @@ done
 _MYECHO "Test SSH Agent"
 [ "$_LOADRESULT" = 0 ] && _OK .Running || _KO
 _KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
-_MYECHO "Loaded SSH keys" && _OK .${_KEY}
+_MYECHO "Loaded SSH keys" && _OK ":${_KEY}"
 echo
 }
 
