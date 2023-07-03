@@ -28,10 +28,10 @@ _LINELENGH=''
 
 _USAGE () {
 _BLU "Generate options:"
-echo -e "	-d|--dot 	= Dot line (default)"
+echo -e "	-d|--dot 	= Dot line"
 echo -e "${_BLX}#${_REZ} [text] ...........................${_BLK}[/wait]${_REZ}"
 echo
-echo -e "	-e|--equal 	= space line then equal sign"
+echo -e "	-e|--equal 	= space line and equal (Default)"
 echo -e "${_BLX}#${_REZ} [text]                          = ${_BLK}[/wait]${_REZ}"
 echo
 echo -e "	-p|--print 	= Colorize Text and return"
@@ -88,7 +88,7 @@ while (( "$#" )); do
   esac
 done
 
-[ -z "$_TAG" ] && _TAG='dot'
+[ -z "$_TAG" ] && _TAG='equal'
 
 # base settings
 if [ -z "$_LINELENGH" ]; then
