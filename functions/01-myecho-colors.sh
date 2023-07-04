@@ -28,10 +28,13 @@ _LINELENGH=''
 
 _USAGE () {
 _BLU "Generate options:"
+echo -e "	-b|--blank 	= Blank line (Default)"
+echo -e "${_BLX}#${_REZ} [text]                            ${_BLK}[/wait]${_REZ}"
+echo
 echo -e "	-d|--dot 	= Dot line"
 echo -e "${_BLX}#${_REZ} [text] ...........................${_BLK}[/wait]${_REZ}"
 echo
-echo -e "	-e|--equal 	= space line and equal (Default)"
+echo -e "	-e|--equal 	= space line and equal"
 echo -e "${_BLX}#${_REZ} [text]                          = ${_BLK}[/wait]${_REZ}"
 echo
 echo -e "	-p|--print 	= Colorize Text and return"
@@ -58,7 +61,6 @@ echo -e "*** ${_BLK}[/wait]${_REZ} means line does not end (scripting purposes)"
 return;
 }
 
-
 while (( "$#" )); do
   case "$1" in
   -n|--num) 
@@ -81,6 +83,7 @@ while (( "$#" )); do
   -l|--line) _TAG='hashtag'; shift 1 ;;
   -d|--dot) _TAG='dot'; shift 1 ;;
   -e|--equal) _TAG='equal'; shift 1 ;;
+  -b|--blank) _TAG='blank'; shift 1 ;;
   -p|--print) _TAG='print'; shift 1 ;;
   -h|--help) _USAGE; return 1 ;;
   #-*|--*) echo "Flag not recognised.." >&2; _USAGE; return ;;
@@ -88,7 +91,7 @@ while (( "$#" )); do
   esac
 done
 
-[ -z "$_TAG" ] && _TAG='equal'
+[ -z "$_TAG" ] && _TAG='blank'
 
 # base settings
 if [ -z "$_LINELENGH" ]; then
@@ -115,6 +118,19 @@ if [ ! -z "$_COLORCHOICE" ]; then
   [ "$_COLORCHOICE" = blink ] && _COLOR="${_BLK}"
 fi
 
+if [ "$_TAG" = 'blank' ]; then
+[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+  _CHAINLENGH=$((_CHAINL + 2))
+  _LINE=$((_LINEHALF - _CHAINLENGH))
+  echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
+  _NVALUE=0
+  while [ "$_NVALUE" -lt "$_LINE" ]; do
+    echo -e " \c"
+    _NVALUE=$((_NVALUE+1))
+  done
+  return 0
+fi
+
 if [ "$_TAG" = 'dot' ]; then
 [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 2))
@@ -127,7 +143,6 @@ if [ "$_TAG" = 'dot' ]; then
   done
   return 0
 fi
-
 
 if [ "$_TAG" = 'equal' ]; then
 [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
