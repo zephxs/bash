@@ -16,13 +16,12 @@ _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(
 ### AUTO INSTALLER / UPDATER for Termux
 if type pkg >/dev/null ; then
 # required pipx for easy install and update under venv
-type pip >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
+type pipx >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
 # install yt-dlp and update if bin older than 15 days
-find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx install -U yt-dlp \; || python3 -m pipx install -U yt-dlp
+find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx install yt-dlp \; || python3 -m pipx upgrade yt-dlp
 # install screen for backgrounding - can be removed with occurences if not needed
 type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
 fi
-
 
 ### FUNCTIONS
 _MYECHO () { 
@@ -43,7 +42,7 @@ echo
 _BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
+select _FORMATIDLINE in $(yt-dlp -n --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
   _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
   _GRN "# Format = $_FORMATID"
   break
