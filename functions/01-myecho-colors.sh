@@ -21,7 +21,6 @@ _MYECHO () {
 ### v1.0 - line lengh added
 # Idea from LinuxGuru Bruno V. @R0 ; ]
 
-
 _TAG=''
 _MSG=''
 _LINELENGH=''
@@ -91,7 +90,7 @@ while (( "$#" )); do
   esac
 done
 
-[ -z "$_TAG" ] && _TAG='blank'
+[ -z "$_TAG" ] && _TAG='equal'
 
 # base settings
 if [ -z "$_LINELENGH" ]; then
