@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Script to check port status and alert if not open
+### v0.5 - update & corrections
 ### v0.4 - added friendly name
 ### v0.3 - added verbose mode
 #
@@ -12,10 +13,9 @@
 # host, port, friendly name
 # 10.10.10.10, 22, My Server
 
-
 # set Variables
-_PORT="8140"
-_HOST="10.10.10.6"
+_PORT=""
+_HOST=""
 _LIST="$HOME/port-check.list"
 _VERB=""
 _VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
@@ -37,7 +37,7 @@ if ! type -t _MYECHO &>/dev/null;then
 fi
 }
 
-_USAGE(){
+usage_fn(){
 echo "Test port status"
 echo "$(basename $0) -p 22 myhost.net        # Check port 22/tcp"
 echo "$(basename $0) -v -l                   # Check list file (default: $HOME/port-check.list) with verbose output"
@@ -60,8 +60,8 @@ while (($#)); do
 	  fi
 	  ;;
     -v|--verbose) _VERB='true'; shift 1 ;;
-    -h|--help) _USAGE && exit 0 ;;
-    -*) _USAGE && exit 1 ;;
+    -h|--help) usage_fn && exit 0 ;;
+    -*) usage_fn && exit 1 ;;
     *) _HOST=$1; shift 1 ;;
   esac
 done
@@ -69,9 +69,9 @@ done
 [ "$_VERB" = true ] && _CHECKMYECHO && _MYECHO -t "Port Tester ### $_VERS"
 
 _ALARM(){
-[ -z "$_PORT" ] && _USAGE && exit 1
-[ -z "$_HOST" ] && _USAGE && exit 1
-[ -z "$_VERB" ] || _MYECHO "${_HOST}"
+[ -z "$_PORT" ] && usage_fn && exit 1 
+[ -z "$_HOST" ] && usage_fn && exit 1
+[ -z "$_VERB" ] || _MYECHO "$_HOST"
 if ! nc -zw1 $_HOST $_PORT; then
   [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
 
@@ -84,7 +84,7 @@ fi
 }
 
 # Main
-if [ -f "$_LIST" ]; then
+if [ -z "$_HOST" ]; then
   while read _LINE; do
     _HOST=$(echo $_LINE |awk -F',' '{print $1}')
     _PORT=$(echo $_LINE |awk -F',' '{print $2}')
