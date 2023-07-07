@@ -41,6 +41,7 @@ _USAGE(){
 echo "Test port status"
 echo "$(basename $0) -p 22 -t myhost.net     # Check port 22/tcp"
 echo "$(basename $0) -v -l                   # Check list file (default: $HOME/port-check.list) with verbose output"
+echo "$(basename $0) -v -n -l                # Check without alerting"
 exit 0
 }
 
@@ -48,6 +49,7 @@ while (($#)); do
   case $1 in
     -p|--port) _PORT=$2; shift 2 ;;
     -t|--target) _HOST=$2; shift 2 ;;
+    -n|--no-telegram) _ALERT=no; shift 1 ;;
     -l|--list)
 	  if [ "$2" != "-*$" ]; then
 	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
@@ -59,7 +61,7 @@ while (($#)); do
 	  ;;
     -v|--verbose) _VERB='true'; shift 1 ;;
     -h|--help) _USAGE && exit 0 ;;
-    *) _USAGE && exit 1 ;;
+    -*) _USAGE && exit 1 ;;
   esac
 done
 
@@ -68,14 +70,15 @@ done
 _ALARM(){
 [ -z "$_PORT" ] && _USAGE && exit 1
 [ -z "$_HOST" ] && _USAGE && exit 1
-[ -z "$_VERB" ] || _MYECHO "${_FNAME}"
+[ -z "$_VERB" ] || _MYECHO "${_HOST}"
 if ! nc -zw1 $_HOST $_PORT; then
-  telegram-send -c alarm "${_FNAME}
+  [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
+
 # Port Check Warning!
 # IP: ${_HOST}   Port: ${_PORT}/tcp NOT OPEN"
-  [ -z "$_VERB" ] || _KO " ${_PORT}/tcp"
+  [ -z "$_VERB" ] || _KO ":${_PORT}/tcp"
 else
-  [ -z "$_VERB" ] || _OK " ${_PORT}/tcp"
+  [ -z "$_VERB" ] || _OK ":${_PORT}/tcp"
 fi
 }
 
