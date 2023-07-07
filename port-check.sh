@@ -39,7 +39,7 @@ fi
 
 _USAGE(){
 echo "Test port status"
-echo "$(basename $0) -p 22 -t myhost.net     # Check port 22/tcp"
+echo "$(basename $0) -p 22 myhost.net        # Check port 22/tcp"
 echo "$(basename $0) -v -l                   # Check list file (default: $HOME/port-check.list) with verbose output"
 echo "$(basename $0) -v -n -l                # Check without alerting"
 exit 0
@@ -62,6 +62,7 @@ while (($#)); do
     -v|--verbose) _VERB='true'; shift 1 ;;
     -h|--help) _USAGE && exit 0 ;;
     -*) _USAGE && exit 1 ;;
+    *) _HOST=$1; shift 1 ;;
   esac
 done
 
