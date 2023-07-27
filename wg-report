@@ -1,6 +1,6 @@
 #!/bin/bash
 ### v0.1 - Report Wireguard New connections
-# and check if last connected handshakes is more than 10 minutes ($_LASTTEN can be modified to suit your)
+# and check if last connected handshakes is more than 10 minutes ($_LASTTEN can be modified to suit your handshake interval)
 # to keep a valid "connected devices" log file 
 
 # Vars
