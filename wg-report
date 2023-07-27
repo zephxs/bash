@@ -5,7 +5,7 @@
 # Client list contains a chosen client name and its public key
 _CLIENTLIST="/etc/wireguard/client-list"
 _LATESTCONN=$(wg show all latest-handshakes)
-_LOGFILE="/etc/wireguard/lastconn.log"
+_LOGFILE="/var/log/wg-lastconn.log"
 
 [ -f "$_LOGFILE" ] || touch $_LOGFILE
 [ -f "$_CLIENTLIST" ] || { echo "No client File. Exit." && exit 1; }
