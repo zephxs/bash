@@ -38,10 +38,10 @@ fi
 }
 
 usage_fn(){
-echo "Test port status"
-echo "$(basename $0) -p 22 myhost.net        # Check port 22/tcp"
-echo "$(basename $0) -v -l                   # Check list file (default: $HOME/port-check.list) with verbose output"
-echo "$(basename $0) -v -n -l                # Check without alerting"
+echo "# Usage:"
+echo "$(basename $0) -p 22 myhost.net     # Check port 22/tcp"
+echo "$(basename $0) -v -l                # Check list file (default: $HOME/port-check.list) with verbose output"
+echo "$(basename $0) -v -n -l             # Check without alerting"
 exit 0
 }
 
@@ -67,10 +67,15 @@ while (($#)); do
 done
 
 [ "$_VERB" = true ] && _CHECKMYECHO && _MYECHO -t "Port Tester ### $_VERS"
+# test if host exists
+[ -z "$_HOST" ] && usage_fn && exit 1
+if ! host $_HOST >/dev/null 2>&1; then
+  _MYECHO "Hostname $_HOST" && _KO
+  exit 1
+fi
 
 _ALARM(){
 [ -z "$_PORT" ] && usage_fn && exit 1 
-[ -z "$_HOST" ] && usage_fn && exit 1
 [ -z "$_VERB" ] || _MYECHO "$_HOST"
 if ! nc -zw1 $_HOST $_PORT; then
   [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
