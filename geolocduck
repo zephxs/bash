@@ -5,7 +5,7 @@
 ### v1.1 - Added colors and myecho functions (available in 'functions' dir in the same repo)
 
 # get script version
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # test internet access
 nc -zw1 duckduckgo.com 443 || { echo "# No Internet Access, exiting.." && exit 1; }

@@ -18,7 +18,7 @@ _PORT=""
 _HOST=""
 _LIST="$HOME/port-check.list"
 _VERB=""
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # check if nc is installed
 if ! type -P nc &>/dev/null; then
