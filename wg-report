@@ -1,18 +1,14 @@
 #!/bin/bash
 ### v0.1 - Report Wireguard New connections
-# and check if last connected handshakes is more than 10 minutes ($_LASTTEN can be modified to suit your handshake interval)
-# to keep a valid "connected devices" log file 
 
 # Vars
-# client-list contains : [client_name] [its public key]            # separated with a space
+# Client list contains a chosen client name and its public key
 _CLIENTLIST="/etc/wireguard/client-list"
-# command to get last handshakes
 _LATESTCONN=$(wg show all latest-handshakes)
-# store recently connected clients
-_LOGFILE="/var/log/wg-lastconn.log"
+_LOGFILE="/etc/wireguard/lastconn.log"
 
 [ -f "$_LOGFILE" ] || touch $_LOGFILE
-[ -s "$_CLIENTLIST" ] || { echo -e "Needs : ${_CLIENTLIST} \nExit." && exit 1; }
+[ -f "$_CLIENTLIST" ] || { echo "No client File. Exit." && exit 1; }
 
 # Main
 while read _INTERFACE _PUBKEY _LASTCONN; do
@@ -22,16 +18,14 @@ _USER=$(grep "$_PUBKEY" "$_CLIENTLIST" |awk '{print $1}')
     if grep -q "$_PUBKEY" "$_LOGFILE"; then
       continue
     else
-    # if client connected in the last ten minute but is not in logfile, send "new connection alert with handshake connection time
+      _REMOTEIP=$(wg show all endpoints |grep $_PUBKEY |awk -F'\t|:' '{print $2}')
       telegram-send -c alarm " Wireguard login
-# user: $_USER
-# timestamp: $(date -d @$_LASTCONN "+%D %T")"
-      # and log it
-      echo "$_USER $_PUBKEY" >> "$_LOGFILE"
+# user: $_USER   # ip: $_REMOTEIP 
+# timestamp: $(date '+%D %T')"
+      echo "$_USER $_PUBKEY $_REMOTEIP" >> "$_LOGFILE"
     fi
   else
     if grep -q "$_PUBKEY" "$_LOGFILE"; then
-    # if client connection time is more than 10 minutes, remove from logfile if present
       sed -i "/$_USER/d" $_LOGFILE
     fi
   fi
