@@ -18,7 +18,7 @@
 #  fi
 
 # get script version
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # ensure script is run as root
 if [[ $EUID -ne 0 ]]; then

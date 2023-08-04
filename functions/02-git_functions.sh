@@ -21,7 +21,7 @@ fi
 pullup () {
 ### Pull all repos and branches at once
 ### v1.4 - add quiet mode
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS='v1.4'
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 if [ "$1" != "-q" ]; then
 _MYECHO -l

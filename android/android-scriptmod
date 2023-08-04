@@ -10,7 +10,7 @@
 # VARS
 _TMPREPLACE="\${TMPDIR}"
 _QUIET=false
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 type _MYECHO >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh >/dev/null 2>&1
 
