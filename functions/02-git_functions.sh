@@ -20,8 +20,8 @@ fi
 
 pullup () {
 ### Pull all repos and branches at once
-### 1.4 - add quiet mode
-_VERS='v1.4'
+### v1.4 - add quiet mode
+_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
 [ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 if [ "$1" != "-q" ]; then
 _MYECHO -l
@@ -52,11 +52,16 @@ done
 }
 
 repsync () {
-### 2.1 - sync all repos to a backup repo
+### v2.1 - sync all repos to a backup repo
 # here 'rep' is the backup repo (_DESTREPO), and all others repositories will be backed up in its own subfolder 
 # rsync is needed to delete files that does not exist anymore
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
-_DESTREPO=$(grep -w rep$ "$HOME/.reporoot")    # My Sync Repo name is 'rep' in this case
+# My Sync Repo name is 'rep' in this case
+if grep -qw rep$ "$HOME/.reporoot"; then
+  _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")
+else 
+  echo "Backup Repo not found.. exiting!" && return 1
+fi
 _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
 _MYECHO -l
 _MYECHO -t "Git - Repos Sync"
@@ -78,7 +83,7 @@ git push
 }
 
 gitp () {
-### 1.5 - add push and sync to back repo with : gitp "my comment"
+### v1.5 - add push and sync to back repo with : gitp "my comment"
 _COMMITMSG=$@
 [ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
