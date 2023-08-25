@@ -56,29 +56,26 @@ while (($#)); do
   case $1 in
     -p|--port) _PORT=$2; shift 2 ;;
     -t|--target) _HOST=$2; shift 2 ;;
-    -n|--no-telegram) _ALERT=no; shift 1 ;;
+    -n|--no-telegram) _ALERT="no"; shift 1 ;;
     -l|--list)
 	  if [ "$2" != "" ]; then
 	    _LIST=$2; shift 2
 	  else
 	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
 	  fi
-	  echo "Port List = $_LIST"
 	  ;;
-    -q|--quiet) _VERB=''; shift 1 ;;
+    -q|--quiet) _VERB=""; shift 1 ;;
     -h|--help) usage_fn && exit 0 ;;
     -*) usage_fn && exit 1 ;;
     *) _HOST=$1; shift 1 ;;
   esac
 done
 
-[ "$_VERB" = true ] && _CHECKMYECHO && _MYECHO -t "Port Tester ### $_VERS"
+[ "$_VERB" = "true" ] && _CHECKMYECHO && _MYECHO -t "Port Tester ### $_VERS"
 
 
 _ALARM(){
-# test if host exists
-[ -z "$_HOST" ] && usage_fn && exit 1
-[ -z "$_PORT" ] && usage_fn && exit 1 
+[ -z "$_HOST" -o -z "$_PORT" ] && exit
 [ -z "$_VERB" ] || _MYECHO "$_FNAME @$_HOST"
 if ! nc -zw1 $_HOST $_PORT; then
   [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
@@ -94,9 +91,9 @@ fi
 # Main
 if [ -z "$_HOST" ]; then
   while read _LINE; do
-    _HOST=$(echo $_LINE |awk -F',' '{print $1}')
-    _PORT=$(echo $_LINE |awk -F',' '{print $2}')
-    _FNAME=$(echo $_LINE |awk -F',' '{print $NF}')
+    _HOST=$(echo $_LINE |awk -F';' '{print $1}')
+    _PORT=$(echo $_LINE |awk -F';' '{print $2}')
+    _FNAME=$(echo $_LINE |awk -F';' '{print $NF}')
     _ALARM
   done < $_LIST
 else
