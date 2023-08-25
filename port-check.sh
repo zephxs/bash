@@ -17,7 +17,7 @@
 _PORT=""
 _HOST=""
 _LIST="$HOME/port-check.list"
-_VERB=""
+_VERB="true"
 _VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # check if nc is installed
@@ -38,10 +38,17 @@ fi
 }
 
 usage_fn(){
-echo "# Usage:"
-echo "$(basename $0) -p 22 myhost.net     # Check port 22/tcp"
-echo "$(basename $0) -v -l                # Check list file (default: $HOME/port-check.list) with verbose output"
-echo "$(basename $0) -v -n -l             # Check without alerting"
+echo -e "# Arguments:
+    -t|--target                    # Host to test port (accepted as only arg without tag)
+    -p|--port                      # Tcp Port
+    -n|--no-alarm                  # Do not alert
+    -l|--list                      # Use List File (default: ~/port-check.list)
+    -q|--quiet                     # No Output (used in script or cron)
+
+# Exemples:
+$(basename $0) -p 22 myhost.net     # Check port 22/tcp on myhost.net
+$(basename $0) -q -l                # Check list file in quiet mode
+$(basename $0) -n -l                # Check list file without alerting"
 exit 0
 }
 
@@ -58,7 +65,7 @@ while (($#)); do
 	  fi
 	  echo "Port List = $_LIST"
 	  ;;
-    -v|--verbose) _VERB='true'; shift 1 ;;
+    -q|--quiet) _VERB=''; shift 1 ;;
     -h|--help) usage_fn && exit 0 ;;
     -*) usage_fn && exit 1 ;;
     *) _HOST=$1; shift 1 ;;
@@ -72,7 +79,7 @@ _ALARM(){
 # test if host exists
 [ -z "$_HOST" ] && usage_fn && exit 1
 [ -z "$_PORT" ] && usage_fn && exit 1 
-[ -z "$_VERB" ] || _MYECHO "$_HOST"
+[ -z "$_VERB" ] || _MYECHO "$_FNAME @$_HOST"
 if ! nc -zw1 $_HOST $_PORT; then
   [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
 
