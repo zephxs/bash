@@ -1,22 +1,26 @@
 #!/bin/bash
 ### Termux / Android Chroot Bash script modder
+### v0.5 - directory mode added
 ### v0.4 - Quiet mode added
 ### v0.3 - $TMPDIR support added
-# mod '/etc' to '${_ETC}' and '/tmp' to '$TMPDIR' occurences in script for Android
+# Mod script or directory containing scripts
+# to adapt them for termux overlay FS
+# mod '/etc' to '${PREFIX}/etc' and '/tmp' to '$TMPDIR' occurences
 
 # VARS
-_ETCREPLACE="\${_ETC}"
 _TMPREPLACE="\${TMPDIR}"
 _QUIET=false
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
+
+type _MYECHO >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh >/dev/null 2>&1
 
 # Define usage function
 usage() {
-  echo "Usage: $0 [-h|--help] [-v|--version] [-q|--quiet] <script>"
-  echo "  -h, --help    Show this help message"
-  echo "  -v, --version Show the version number"
-  echo "  -q, --quiet   Run in quiet mode"
-  echo "  <script>      The script to modify"
+  _MYECHO -p "Usage: $0 [-h|--help] [-v|--version] [-q|--quiet] <script>"
+  _MYECHO -p "  -h, --help    Show this help message"
+  _MYECHO -p "  -v, --version Show the version number"
+  _MYECHO -p "  -q, --quiet   Run in quiet mode"
+  _MYECHO -p "  <script>      The script to modify"
 }
 
 # Parse command-line options
@@ -27,7 +31,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     -v|--version)
-      echo "$_VERS"
+      _MYECHO -p "$_VERS"
       exit 0
       ;;
     -q|--quiet)
@@ -41,40 +45,56 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+[ "$_QUIET" = false ] && _MYECHO -t "Android mod script : $SCRIPT"
+
+
+_CORRECT(){
 # Check for missing script argument
 if [ -z "$SCRIPT" ]; then
-  echo "Error: missing script argument"
+  _MYECHO -p "Error: missing script argument"
   usage
   exit 1
 fi
 
 # Check for non-existent script
 if [ ! -f "$SCRIPT" ]; then
-  echo "Error: file not found: $SCRIPT"
+  _MYECHO -p "Error: file not found: $SCRIPT"
   exit 1
 fi
+
+# Abort for itself
+if [ "$(basename $SCRIPT)" = "$(basename $0)" ]; then
+  _MYECHO -p "$SCRIPT not working on itself"
+else
 
 # Modify script
-if grep -q '#!/bin/bash' "$SCRIPT" || grep -q '#!/usr/bin/env bash' "$SCRIPT"; then
-  if grep -q '/etc' "$SCRIPT"; then
-      [ "$_QUIET" = false ] && echo "# Modifying '/etc' occurences in $SCRIPT..." && grep -E '/etc' "$SCRIPT"
-    sed -i "s/\/etc/${_ETCREPLACE}/g" "$SCRIPT"
-      [ "$_QUIET" = false ] && echo "# '/etc' occurences modded to '\${_ETC}' [OK]" && grep "$_ETCREPLACE" "$SCRIPT"
+  [ "$_QUIET" = false ] && _MYECHO "'/etc' occurences"
+  if grep -q ' ${PREFIX}/etc' "$SCRIPT"; then
+      [ "$_QUIET" = false ] && _OK ":already done"
+  elif grep -q ' /etc' "$SCRIPT"; then
+    sed -i 's/\/etc/\${PREFIX}\/etc/g' $SCRIPT && { [ "$_QUIET" = false ] && _OK ":corrected" && grep \${PREFIX} "$SCRIPT"; } || { [ "$_QUIET" = false ] && _KO; }
   else
-      [ "$_QUIET" = false ] && echo "# No '/etc' occurences found in $SCRIPT"
+      [ "$_QUIET" = false ] && _OK ":Not found"
   fi
-
-  if grep -q '/tmp' "$SCRIPT"; then
-      [ "$_QUIET" = false ] && echo "# Modifying '/tmp' occurences in $SCRIPT..." && grep -E '/tmp' "$SCRIPT"
-    sed -i "s/\/tmp/${_TMPREPLACE}/g" "$SCRIPT"
-      [ "$_QUIET" = false ] && echo "# '/tmp' occurences modded to '\${TMPDIR}' [OK]" && grep "$_TMPREPLACE" "$SCRIPT"
+  
+  [ "$_QUIET" = false ] && _MYECHO "'/tmp' occurences"
+  if grep -q '${TMPDIR}' "$SCRIPT"; then
+    sed -i "s/\${TMPDIR}/${_TMPREPLACE}/g" "$SCRIPT" && { [ "$_QUIET" = false ] && _OK ":corrected" && grep "$_TMPREPLACE" "$SCRIPT"; } || { [ "$_QUIET" = false ] && _KO ; }
   else
-      [ "$_QUIET" = false ] && echo "# No '/tmp' occurences found in $SCRIPT"
+      [ "$_QUIET" = false ] && _OK ":Not found"
   fi
-
-    [ "$_QUIET" = false ] && echo "### Modifications complete."
-else
-  echo "Error: $SCRIPT is not a bash script"
-  exit 1
 fi
+}
 
+# Main
+[ -f "$SCRIPT" ] && _CORRECT && exit 0
+if [ -d "$SCRIPT" ]; then
+  for SCRIPT in $SCRIPT* ; do
+    _MYECHO -p "Script: $SCRIPT"
+    read -p "Continue? [Y/n]: " _CONFIRM
+    [ "$_CONFIRM" = "n" ] && { _MYECHO -c red -p "Aborted.." && continue; }
+    _CORRECT
+  done
+else
+_MYECHO -c red -p "Not a script file nor a directory"
+fi
