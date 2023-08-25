@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Script to check port status and alert if not open
+### v0.5 - update & corrections
 ### v0.4 - added friendly name
 ### v0.3 - added verbose mode
 #
@@ -12,13 +13,12 @@
 # host, port, friendly name
 # 10.10.10.10, 22, My Server
 
-
 # set Variables
-_PORT="8140"
-_HOST="10.10.10.6"
+_PORT=""
+_HOST=""
 _LIST="$HOME/port-check.list"
 _VERB=""
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # check if nc is installed
 if ! type -P nc &>/dev/null; then
@@ -37,10 +37,11 @@ if ! type -t _MYECHO &>/dev/null;then
 fi
 }
 
-_USAGE(){
-echo "Test port status"
-echo "$(basename $0) -p 22 -t myhost.net     # Check port 22/tcp"
-echo "$(basename $0) -v -l                   # Check list file (default: $HOME/port-check.list) with verbose output"
+usage_fn(){
+echo "# Usage:"
+echo "$(basename $0) -p 22 myhost.net     # Check port 22/tcp"
+echo "$(basename $0) -v -l                # Check list file (default: $HOME/port-check.list) with verbose output"
+echo "$(basename $0) -v -n -l             # Check without alerting"
 exit 0
 }
 
@@ -48,38 +49,43 @@ while (($#)); do
   case $1 in
     -p|--port) _PORT=$2; shift 2 ;;
     -t|--target) _HOST=$2; shift 2 ;;
+    -n|--no-telegram) _ALERT=no; shift 1 ;;
     -l|--list)
-	  if [ "$2" != "-*$" ]; then
-	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
-	  elif [ "$2" != "" ]; then
+	  if [ "$2" != "" ]; then
 	    _LIST=$2; shift 2
 	  else
 	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
 	  fi
+	  echo "Port List = $_LIST"
 	  ;;
     -v|--verbose) _VERB='true'; shift 1 ;;
-    -h|--help) _USAGE && exit 0 ;;
-    *) _USAGE && exit 1 ;;
+    -h|--help) usage_fn && exit 0 ;;
+    -*) usage_fn && exit 1 ;;
+    *) _HOST=$1; shift 1 ;;
   esac
 done
 
 [ "$_VERB" = true ] && _CHECKMYECHO && _MYECHO -t "Port Tester ### $_VERS"
 
+
 _ALARM(){
-[ -z "$_PORT" ] && _USAGE && exit 1
-[ -z "$_HOST" ] && _USAGE && exit 1
-[ -z "$_VERB" ] || _MYECHO "${_FNAME}"
+# test if host exists
+[ -z "$_HOST" ] && usage_fn && exit 1
+[ -z "$_PORT" ] && usage_fn && exit 1 
+[ -z "$_VERB" ] || _MYECHO "$_HOST"
 if ! nc -zw1 $_HOST $_PORT; then
-  telegram-send -c alarm "${_FNAME} # Port Check WARN
+  [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
+
+# Port Check Warning!
 # IP: ${_HOST}   Port: ${_PORT}/tcp NOT OPEN"
-  [ -z "$_VERB" ] || _KO " ${_PORT}/tcp"
+  [ -z "$_VERB" ] || _KO ":${_PORT}/tcp"
 else
-  [ -z "$_VERB" ] || _OK " ${_PORT}/tcp"
+  [ -z "$_VERB" ] || _OK ":${_PORT}/tcp"
 fi
 }
 
 # Main
-if [ -f "$_LIST" ]; then
+if [ -z "$_HOST" ]; then
   while read _LINE; do
     _HOST=$(echo $_LINE |awk -F',' '{print $1}')
     _PORT=$(echo $_LINE |awk -F',' '{print $2}')
