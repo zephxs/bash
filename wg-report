@@ -1,0 +1,32 @@
+#!/bin/bash
+### v0.1 - Report Wireguard New connections
+
+# Vars
+# Client list contains a chosen client name and its public key
+_CLIENTLIST="/etc/wireguard/client-list"
+_LATESTCONN=$(wg show all latest-handshakes)
+_LOGFILE="/etc/wireguard/lastconn.log"
+
+[ -f "$_LOGFILE" ] || touch $_LOGFILE
+[ -f "$_CLIENTLIST" ] || { echo "No client File. Exit." && exit 1; }
+
+# Main
+while read _INTERFACE _PUBKEY _LASTCONN; do
+_LASTTEN=$(date +%s "--date=-10 min")
+_USER=$(grep "$_PUBKEY" "$_CLIENTLIST" |awk '{print $1}')
+  if [ "$_LASTCONN" -ge "$_LASTTEN"  ]; then
+    if grep -q "$_PUBKEY" "$_LOGFILE"; then
+      continue
+    else
+      _REMOTEIP=$(wg show all endpoints |grep $_PUBKEY |awk -F'\t|:' '{print $2}')
+      telegram-send -c alarm " Wireguard login
+# user: $_USER   # ip: $_REMOTEIP 
+# timestamp: $(date '+%D %T')"
+      echo "$_USER $_PUBKEY $_REMOTEIP" >> "$_LOGFILE"
+    fi
+  else
+    if grep -q "$_PUBKEY" "$_LOGFILE"; then
+      sed -i "/$_USER/d" $_LOGFILE
+    fi
+  fi
+done <<< $_LATESTCONN

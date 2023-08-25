@@ -5,7 +5,10 @@
 ### v1.1 - Added colors and myecho functions (available in 'functions' dir in the same repo)
 
 # get script version
-_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
+_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
+
+# test internet access
+nc -zw1 duckduckgo.com 443 || { echo "# No Internet Access, exiting.." && exit 1; }
 
 while (( $# )); do
   case $1 in
@@ -42,12 +45,12 @@ if [[ $_ONLYIP -eq 1 ]]; then
 fi
 
 _AWKRESULT () {
-  echo "########## IP DuckDuck Geoloc $_VERS ##########"
+  echo "########## IP DuckDuck Geoloc ### $_VERS ##########"
   echo "$_TMPRESULT" |awk '{print "# IP: " $1"\n# City: " $3"\n# ZipCode: " $NF"\n# Province: " $4"\n# Country: " $(NF-1)}' |sed 's/,//'
 }
 
 _MYRESULT () {
-  _MYECHO -t "IP DuckDuck Geoloc $_VERS"
+  _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
   _MYECHO -e "IP" && echo $_IP
   _MYECHO -e "City" && echo $_CITY
   _MYECHO -e "ZipCode" && echo $_ZIPCODE

@@ -16,13 +16,12 @@ _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(
 ### AUTO INSTALLER / UPDATER for Termux
 if type pkg >/dev/null ; then
 # required pipx for easy install and update under venv
-type pip >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
+type pipx >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
 # install yt-dlp and update if bin older than 15 days
-find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx install -U yt-dlp \; || python3 -m pipx install -U yt-dlp
+find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx install yt-dlp \; || python3 -m pipx upgrade yt-dlp
 # install screen for backgrounding - can be removed with occurences if not needed
 type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
 fi
-
 
 ### FUNCTIONS
 _MYECHO () { 
@@ -43,7 +42,7 @@ echo
 _BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
+select _FORMATIDLINE in $(yt-dlp -n --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
   _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
   _GRN "# Format = $_FORMATID"
   break
@@ -89,13 +88,13 @@ while true; do
 case "$REPLY" in
  1) _BLU "######################################"
   _BLU '# Video - Downloading..'
-  screen yt-dlp --restrict-filenames -o "${_VIDEOS}" ${_URL}
+  screen yt-dlp -n --restrict-filenames -o "${_VIDEOS}" ${_URL}
   break
   ;;
  2) _BLU "######################################"
   _BLU '# Video - Detecting Format..'
   _FORMATSELECT
-  screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
+  screen yt-dlp -n --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
   break
   ;;
  3) _BLU "######################################"
@@ -103,26 +102,25 @@ case "$REPLY" in
   read -p "Filename: " _ONAME
   _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
   _FORMATSELECT
-  screen yt-dlp --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
+  screen yt-dlp -n --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
   break
   ;;
  4) _BLU "######################################"
   _BLU '# AudioBook - Downloading..'
-  screen yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
+  screen yt-dlp -n --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
  p) _BLU "######################################"
   [ -d "$_TMPFOLDER" ] || mkdir -p "$_TMPFOLDER"
-  if [ "$(ls $_TMPFOLDER |wc -l)" -ne 1 ]; then
+  if [ "$(ls $_TMPFOLDER |wc -l)" -ne 0 ]; then
     rm -rf "${_TMPFOLDER}/*"
   fi
   _BLU '# Read and delete'
-  yt-dlp --restrict-filenames -o "${_TMPFILE}" ${_URL}
+  yt-dlp -n --restrict-filenames -o "${_TMPFILE}" ${_URL}
   if [ "$(ls $_TMPFOLDER |wc -l)" = 1 ]; then
     _PLAYFILE=$(ls "$_TMPFOLDER")
     _BLU "# Playing $_PLAYFILE"
     am start -n org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity -d /storage/emulated/0/tmpdl/$_PLAYFILE
-    rm -f $_TMPFOLDER/*
   else
     _RED "> more than one file in folder, retry.."
     rm -rf "${_TMPFOLDER}/*"
