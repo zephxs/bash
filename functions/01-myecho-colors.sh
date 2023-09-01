@@ -39,6 +39,9 @@ echo
 echo -e "	-p|--print 	= Colorize Text and return"
 echo -e "${_BLX}[test text !]${_REZ}"
 echo
+echo -e "	-s|--start 	= Start with colorized hashtag, Text and return"
+echo -e "${_BLX}#${_REZ}[test text !]"
+echo
 echo -e "	-t|--title 	= Centered Title"
 echo -e "${_BLX}##################${_REZ} [text] ${_BLX}#################${_REZ}"
 echo
@@ -110,16 +113,19 @@ _LINEHALF=$((_LINELENGH/5*3))
 _CHAINL=$(echo "${_MSG}" | wc -c)
 
 if [ ! -z "$_COLORCHOICE" ]; then 
-  [ "$_COLORCHOICE" = white ] && _COLOR="${_WHT}"
-  [ "$_COLORCHOICE" = blue ] && _COLOR="${_BLX}"
-  [ "$_COLORCHOICE" = green ] && _COLOR="${_GRX}"
-  [ "$_COLORCHOICE" = red ] && _COLOR="${_RDX}"
-  [ "$_COLORCHOICE" = purple ] && _COLOR="${_MVX}"
-  [ "$_COLORCHOICE" = blink ] && _COLOR="${_BLK}"
+  case "${_COLORCHOICE}" in
+	  white) _COLOR="${_WHT}";;
+	  blue) _COLOR="${_BLX}";;
+	  green) _COLOR="${_GRX}";;
+	  red) _COLOR="${_RDX}";;
+          purple) _COLOR="${_MVX}";;
+          blink) _COLOR="${_BLK}";;
+  esac
 fi
 
-if [ "$_TAG" = 'blank' ]; then
-[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+case "${_TAG}" in
+  'blank')
+  [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
   echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
@@ -129,10 +135,9 @@ if [ "$_TAG" = 'blank' ]; then
     _NVALUE=$((_NVALUE+1))
   done
   return 0
-fi
-
-if [ "$_TAG" = 'dot' ]; then
-[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+  ;;
+  'dot')
+  [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
   echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
@@ -142,10 +147,9 @@ if [ "$_TAG" = 'dot' ]; then
     _NVALUE=$((_NVALUE+1))
   done
   return 0
-fi
-
-if [ "$_TAG" = 'equal' ]; then
-[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+  ;;
+  'equal')
+  [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
   _CHAINLENGH=$((_CHAINL + 3))
   _LINE=$((_LINEHALF - _CHAINLENGH));
   echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
@@ -156,30 +160,28 @@ if [ "$_TAG" = 'equal' ]; then
   done;
   echo -e "= \c"
   return 0
-fi
-
-if [ "$_TAG" = 'title' ]; then
-[ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
-_CHAINLENGH=$((_CHAINL + 1))
-_HTL=$((_LINELENGH - _CHAINLENGH))
-_HTL2=$((_HTL /2))
-_HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
-_NVALUE=0
-while [ "$_NVALUE" -lt "$_HTL2" ]; do
- echo -e "${_COLOR}#${_REZ}\c"
- _NVALUE=$((_NVALUE+1))
-done
-echo -e " ${_COLOR}${_MSG}${_REZ} \c"
-_NVALUE=0
-while [ "$_NVALUE" -lt "$_HTL3" ]; do
- echo -e "${_COLOR}#${_REZ}\c"
- _NVALUE=$((_NVALUE+1))
-done
-echo
-return 0
-fi
-
-if [ "$_TAG" = 'hashtag' ]; then
+  ;;
+  'title')
+  [ -z "$_MSG" ] && { echo "Missing message.."; _USAGE; }
+  _CHAINLENGH=$((_CHAINL + 1))
+  _HTL=$((_LINELENGH - _CHAINLENGH))
+  _HTL2=$((_HTL /2))
+  _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
+  _NVALUE=0
+  while [ "$_NVALUE" -lt "$_HTL2" ]; do
+    echo -e "${_COLOR}#${_REZ}\c"
+    _NVALUE=$((_NVALUE+1))
+  done
+  echo -e " ${_COLOR}${_MSG}${_REZ} \c"
+  _NVALUE=0
+  while [ "$_NVALUE" -lt "$_HTL3" ]; do
+    echo -e "${_COLOR}#${_REZ}\c"
+    _NVALUE=$((_NVALUE+1))
+  done
+  echo
+  return 0
+  ;;
+  'hashtag')
   echo -e "${_COLOR}\c"
   _NVALUE=0
   while [ "$_NVALUE" -lt "$_LINELENGH" ]; do
@@ -188,12 +190,14 @@ if [ "$_TAG" = 'hashtag' ]; then
   done
   echo -e "${_REZ}"
   return 0
-fi
-
-
-if [ "$_TAG" = 'print' ]; then
+  ;;
+  'print')
 echo -e "${_COLOR}${_MSG}${_REZ}"
-fi
+  ;;
+'start')
+echo -e "${_COLOR}#${_REZ} ${_MSG}"
+  ;;
+esac
 }
 
 alias myecho='_MYECHO'
