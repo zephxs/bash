@@ -83,6 +83,7 @@ while (( "$#" )); do
   -d|--dot) _TAG='dot'; shift 1 ;;
   -e|--equal) _TAG='equal'; shift 1 ;;
   -b|--blank) _TAG='blank'; shift 1 ;;
+  -s|--start) _TAG='start'; shift 1 ;;
   -p|--print) _TAG='print'; shift 1 ;;
   -h|--help) _USAGE; return 1 ;;
   #-*|--*) echo "Flag not recognised.." >&2; _USAGE; return ;;
