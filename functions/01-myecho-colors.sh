@@ -71,7 +71,7 @@ while (( "$#" )); do
     fi
     ;;
   -c|--color) 
-    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink|white) ]]; then
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = "@(blue|green|purple|red|blink|white)" ]]; then
     _COLORCHOICE="$2"
     shift 2
     else

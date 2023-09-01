@@ -17,6 +17,7 @@
 _PORT=""
 _HOST=""
 _LIST="$HOME/port-check.list"
+_RETRYLIST="$HOME/port-check-retry.list"
 _VERB="true"
 _VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
@@ -33,7 +34,7 @@ fi
 # check if _MYECHO is present
 _CHECKMYECHO(){ 
 if ! type -t _MYECHO &>/dev/null;then
-  . /etc/profile.d/01-myecho-colors.sh
+  . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
 fi
 }
 
@@ -58,7 +59,7 @@ while (($#)); do
     -t|--target) _HOST=$2; shift 2 ;;
     -n|--no-telegram) _ALERT="no"; shift 1 ;;
     -l|--list)
-	  if [ "$2" != "" ]; then
+	  if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
 	    _LIST=$2; shift 2
 	  else
 	    [ -f "$_LIST" ] && shift 1 || { echo "File $_LIST not found, exiting.."; exit 1; }
@@ -81,8 +82,13 @@ if ! nc -zw1 $_HOST $_PORT; then
   [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
 
 # Port Check Warning!
-# IP: ${_HOST}   Port: ${_PORT}/tcp NOT OPEN"
+# Host: ${_HOST}
+# Port: ${_PORT}/tcp NOT OPEN"
   [ -z "$_VERB" ] || _KO ":${_PORT}/tcp"
+  echo "$_HOST;$_PORT;$_FNAME" >>${_RETRYLIST}
+  if ! pgrep -fl port-check-retry.sh &>/dev/null; then
+  port-check-retry.sh &
+  fi
 else
   [ -z "$_VERB" ] || _OK ":${_PORT}/tcp"
 fi
