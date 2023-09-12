@@ -24,6 +24,9 @@ _MYECHO () {
 _TAG=''
 _MSG=''
 _LINELENGH=''
+if [ -f "$HOME/.myechorc" ]; then
+  source $HOME/.myechorc
+fi
 
 _USAGE () {
 _BLU "Generate options:"
@@ -74,7 +77,7 @@ while (( "$#" )); do
     fi
     ;;
   -c|--color) 
-    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = "@(blue|green|purple|red|blink|white)" ]]; then
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink|white) ]]; then
     _COLORCHOICE="$2"
     shift 2
     else
@@ -94,24 +97,18 @@ while (( "$#" )); do
   esac
 done
 
+# tag settings
 [ -z "$_TAG" ] && _TAG='equal'
 
-# base settings
+# Lengh settings
 if [ -z "$_LINELENGH" ]; then
-  if [ -f "$HOME/.myechorc" ]; then
-    source $HOME/.myechorc
-  else
-    _LINELENGH=$(tput cols)
-  fi
-fi
+_LINELENGH=$(tput cols)
+else
 [ "$_LINELENGH" -gt "$(tput cols)" ] && _LINELENGH=$(tput cols)
-# default color
+fi
+
+#  color settings
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
-
-# set end of dot line @ 2/3 of line lengh
-_LINEHALF=$((_LINELENGH/5*3))
-_CHAINL=$(echo "${_MSG}" | wc -c)
-
 if [ ! -z "$_COLORCHOICE" ]; then 
   case "${_COLORCHOICE}" in
 	  white) _COLOR="${_WHT}";;
@@ -122,6 +119,11 @@ if [ ! -z "$_COLORCHOICE" ]; then
           blink) _COLOR="${_BLK}";;
   esac
 fi
+
+# set end of dot line @ 2/3 of line lengh
+_LINEHALF=$((_LINELENGH/5*3))
+_CHAINL=$(echo "${_MSG}" | wc -c)
+
 
 case "${_TAG}" in
   'blank')
