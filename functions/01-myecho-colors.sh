@@ -127,7 +127,7 @@ _CHAINL=$(echo "${_MSG}" | wc -c)
 
 case "${_TAG}" in
   'blank')
-  [ -z "$_MSG" ] && { echo "Missing message.."; }
+  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
   _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
   echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
@@ -139,7 +139,7 @@ case "${_TAG}" in
   return 0
   ;;
   'dot')
-  [ -z "$_MSG" ] && { echo "Missing message.."; }
+  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
   _CHAINLENGH=$((_CHAINL + 2))
   _LINE=$((_LINEHALF - _CHAINLENGH))
   echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
@@ -151,7 +151,7 @@ case "${_TAG}" in
   return 0
   ;;
   'equal')
-  [ -z "$_MSG" ] && { echo "Missing message.."; }
+  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
   _CHAINLENGH=$((_CHAINL + 3))
   _LINE=$((_LINEHALF - _CHAINLENGH));
   echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
@@ -164,7 +164,7 @@ case "${_TAG}" in
   return 0
   ;;
   'title')
-  [ -z "$_MSG" ] && { echo "Missing message.."; }
+  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
   _CHAINLENGH=$((_CHAINL + 1))
   _HTL=$((_LINELENGH - _CHAINLENGH))
   _HTL2=$((_HTL /2))
@@ -194,10 +194,12 @@ case "${_TAG}" in
   return 0
   ;;
   'print')
-echo -e "${_COLOR}${_MSG}${_REZ}"
+  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+  echo -e "${_COLOR}${_MSG}${_REZ}"
   ;;
-'start')
-echo -e "${_COLOR}#${_REZ} ${_MSG}"
+  'start')
+  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+  echo -e "${_COLOR}#${_REZ} ${_MSG}"
   ;;
 esac
 }
