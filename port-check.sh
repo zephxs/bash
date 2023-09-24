@@ -78,7 +78,7 @@ done
 _ALARM(){
 [ -z "$_HOST" -o -z "$_PORT" ] && exit
 [ -z "$_VERB" ] || _MYECHO "$_FNAME @$_HOST"
-if ! nc -zw1 $_HOST $_PORT; then
+if ! nc -zw3 $_HOST $_PORT; then
   [ "$_ALERT" = 'no' ] || telegram-send -c alarm "${_FNAME}
 
 # Port Check Warning!
