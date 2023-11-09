@@ -23,8 +23,7 @@ _MYECHO () {
 
 _TAG=''
 _MSG=''
-_LINELENGH=''
-if [ -f "$HOME/.myechorc" ]; then
+if [ -z "$_LINELENGH" -a -f "$HOME/.myechorc" ]; then
   source $HOME/.myechorc
 fi
 
