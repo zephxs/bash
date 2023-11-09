@@ -1,0 +1,78 @@
+#!/bin/bash
+##### MP3 tagger/renamer [prereq: eyeD3]
+### v0.3 - correct mp3 filename handling with IFS
+### v0.2 - var rewrite for lead/trail spaces
+### v0.1 - first rev + renaming
+
+### AUTO INSTALLER / UPDATER for Termux
+if type pkg >/dev/null ; then
+# required pipx for easy install and update under venv
+type pip >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
+# install yt-dlp and update if bin older than 15 days
+find $(type -P eyeD3) -mtime +15 -exec python3 -m pipx install eyeD3 \; || python3 -m pipx upgrade eyeD3
+fi
+
+# nice output
+type _BLU >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
+
+# mp3 file path as only argument
+[ -z "$1" ] && { echo "Artist name not found" && exit 1; } || _MP3="$@"
+[ -f "$_MP3" ] || { echo "$_MP3 is not a valid file.." &&  exit 1; }
+
+# mod IFS for files containing spaces
+_OLDIFS="$IFS" && IFS=''
+_MP3Z="$(basename -s '.mp3' $_MP3 |sed 's/,/ /g;s/!/ /g;s/#/ /g;   s/_/ /g; ')"
+_ARTISTZ="${_MP3Z%%-*}"
+_SONGZ="${_MP3Z##*-}"
+# remove leading and trailing spaces
+_SONGZ="${_SONGZ#"${_SONGZ%%[![:space:]]*}"}"
+_SONGZ="${_SONGZ%"${_SONGZ##*[![:space:]]}"}"
+_ARTISTZ="${_ARTISTZ%"${_ARTISTZ##*[![:space:]]}"}"
+
+_MYECHO -l
+_MYECHO "MP3 file" && _OK 
+_MYECHO -c green -p "$_MP3Z"
+_MYECHO -s "tags:"
+eyeD3 "$_MP3"
+echo
+# Tag edition
+read -n 1 -p "Edit ID3 tag? [Yes/No/All] : "
+case $REPLY in
+  n|N) echo ;;
+  a|A) echo
+    _MYECHO -s "Artist:"
+    read -e -i "$_MP3Z" _ARTIST
+    _MYECHO -s "Song:"
+    read -e -i "$_MP3Z" _SONG
+    eyeD3 -a "$_ARTIST" -t "$_SONG" "$_MP3"
+    ;;
+  *) echo
+    _MYECHO -s "Artist:"
+    read -e -i "$_ARTISTZ" _ARTIST
+    _MYECHO -s "Song:"
+    read -e -i "$_SONGZ" _SONG
+    eyeD3 -a "$_ARTIST" -t "$_SONG" "$_MP3"
+    ;;
+esac
+# File rename
+read -n 1 -p "Rename? [Yes/No/All] : "
+case $REPLY in
+  n|N) echo && exit 0 ;;
+  a|A) echo 
+    _MYECHO -s "MP3 Name:"
+    read -e -i "$_MP3Z" _MP3NAME
+    mv "$_MP3" "$(dirname $_MP3)/${_MP3NAME}.mp3"
+    ;;
+  *) echo
+    if [ -z "$_ARTIST" ]; then
+      _MYECHO -s "MP3 Name:"
+      read -e -i "$_MP3Z" _MP3NAME
+      mv "$_MP3" "$(dirname $_MP3)/${_MP3NAME}.mp3"
+      _MYECHO -c green -p "$(dirname $_MP3)/${_MP3NAME}.mp3"
+    else
+      mv "$_MP3" "$(dirname $_MP3)/${_ARTIST}-${_SONG}.mp3"
+      _MYECHO -c green -p "$(dirname $_MP3)/${_ARTIST}-${_SONG}.mp3"
+    fi
+    ;;
+esac
+
