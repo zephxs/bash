@@ -1,14 +1,13 @@
 #!/bin/bash
 ### Termux / Android Chroot Bash script modder
-### v0.5 - directory mode added
-### v0.4 - Quiet mode added
+### v0.5 - Quiet mode added
 ### v0.3 - $TMPDIR support added
 # Mod script or directory containing scripts
 # to adapt them for termux overlay FS
 # mod '/etc' to '${PREFIX}/etc' and '/tmp' to '$TMPDIR' occurences
 
 # VARS
-_TMPREPLACE="\${TMPDIR}"
+_TMPREPLACE="/data/data/com.termux/files/usr/tmp"
 _QUIET=false
 _VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
@@ -78,8 +77,10 @@ else
   fi
   
   [ "$_QUIET" = false ] && _MYECHO "'/tmp' occurences"
-  if grep -q '${TMPDIR}' "$SCRIPT"; then
-    sed -i "s/\${TMPDIR}/${_TMPREPLACE}/g" "$SCRIPT" && { [ "$_QUIET" = false ] && _OK ":corrected" && grep "$_TMPREPLACE" "$SCRIPT"; } || { [ "$_QUIET" = false ] && _KO ; }
+  if grep -q ' ${PREFIX}/tmp' "$SCRIPT"; then
+      [ "$_QUIET" = false ] && _OK ":already done"
+  elif grep -q '/tmp' "$SCRIPT"; then
+    sed -i "s#/tmp#${_TMPREPLACE}#g" $SCRIPT && { [ "$_QUIET" = false ] && _OK ":corrected" && grep "$_TMPREPLACE" "$SCRIPT"; } || { [ "$_QUIET" = false ] && _KO ; }
   else
       [ "$_QUIET" = false ] && _OK ":Not found"
   fi
