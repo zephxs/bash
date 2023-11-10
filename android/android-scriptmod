@@ -5,7 +5,6 @@
 # Mod script or directory containing scripts
 # to adapt them for termux overlay FS
 # mod '/etc' to '${PREFIX}/etc' and '/tmp' to '$TMPDIR' occurences
-
 # VARS
 _TMPREPLACE="/data/data/com.termux/files/usr/tmp"
 _QUIET=false
@@ -23,7 +22,7 @@ usage() {
 }
 
 # Parse command-line options
-while [[ $# -gt 0 ]]; do
+while (($#)); do
   case "$1" in
     -h|--help)
       usage
@@ -35,38 +34,28 @@ while [[ $# -gt 0 ]]; do
       ;;
     -q|--quiet)
       _QUIET=true
-      shift
+      shift 1
       ;;
     *)
       SCRIPT="$1"
-      shift
+      shift 1
       ;;
   esac
 done
 
 [ "$_QUIET" = false ] && _MYECHO -t "Android mod script : $SCRIPT"
 
-
 _CORRECT(){
 # Check for missing script argument
-if [ -z "$SCRIPT" ]; then
-  _MYECHO -p "Error: missing script argument"
-  usage
-  exit 1
-fi
-
+[ -z "$SCRIPT" ] && { _MYECHO -p "Error: missing script argument"; usage; exit 1; }
 # Check for non-existent script
-if [ ! -f "$SCRIPT" ]; then
-  _MYECHO -p "Error: file not found: $SCRIPT"
-  exit 1
-fi
-
+[ ! -f "$SCRIPT" ] && { _MYECHO -p "Error: file not found: $SCRIPT"; exit 1; }
 # Abort for itself
 if [ "$(basename $SCRIPT)" = "$(basename $0)" ]; then
   _MYECHO -p "$SCRIPT not working on itself"
 else
-
 # Modify script
+  # ETC
   [ "$_QUIET" = false ] && _MYECHO "'/etc' occurences"
   if grep -q ' ${PREFIX}/etc' "$SCRIPT"; then
       [ "$_QUIET" = false ] && _OK ":already done"
@@ -75,7 +64,7 @@ else
   else
       [ "$_QUIET" = false ] && _OK ":Not found"
   fi
-  
+  # TMP
   [ "$_QUIET" = false ] && _MYECHO "'/tmp' occurences"
   if grep -q ' ${PREFIX}/tmp' "$SCRIPT"; then
       [ "$_QUIET" = false ] && _OK ":already done"
@@ -85,10 +74,11 @@ else
       [ "$_QUIET" = false ] && _OK ":Not found"
   fi
 fi
+exit 0
 }
 
 # Main
-[ -f "$SCRIPT" ] && _CORRECT && exit 0
+[ -f "$SCRIPT" ] && _CORRECT
 if [ -d "$SCRIPT" ]; then
   for SCRIPT in $SCRIPT* ; do
     _MYECHO -p "Script: $SCRIPT"
