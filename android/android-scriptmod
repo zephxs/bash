@@ -66,7 +66,7 @@ else
   fi
   # TMP
   [ "$_QUIET" = false ] && _MYECHO "'/tmp' occurences"
-  if grep -q ' ${PREFIX}/tmp' "$SCRIPT"; then
+  if grep -q "${_TMPREPLACE}" "$SCRIPT"; then
       [ "$_QUIET" = false ] && _OK ":already done"
   elif grep -q '/tmp' "$SCRIPT"; then
     sed -i "s#/tmp#${_TMPREPLACE}#g" $SCRIPT && { [ "$_QUIET" = false ] && _OK ":corrected" && grep "$_TMPREPLACE" "$SCRIPT"; } || { [ "$_QUIET" = false ] && _KO ; }
