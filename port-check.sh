@@ -34,7 +34,7 @@ fi
 # check if _MYECHO is present
 _CHECKMYECHO(){ 
 if ! type -t _MYECHO &>/dev/null;then
-  . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
+  . /etc/profile.d/01-myecho-colors.sh
 fi
 }
 
