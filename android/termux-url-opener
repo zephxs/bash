@@ -10,6 +10,8 @@
 _VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
 _ABOOKS='/data/data/com.termux/files/home/storage/shared/Music/6-audiobooks/%(title)s.%(ext)s'
 _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(ext)s'
+_TMPFOLDER='/storage/emulated/0/tmpdl/'
+_TMPFILE='/storage/emulated/0/tmpdl/%(title)s.%(ext)s'
 # Test your paths
 [ -d "$(dirname $_VIDEOS)" -o -d "$(dirname $_ABOOKS)" -o -d "$(dirname $_ZIKS)" ] || { echo "# Destination Folders not found, exit" && exit 1; } 
 
@@ -18,7 +20,7 @@ if type pkg >/dev/null ; then
 # required pipx for easy install and update under venv
 type pipx >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
 # install yt-dlp and update if bin older than 15 days
-find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx install yt-dlp \; || python3 -m pipx upgrade yt-dlp
+find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
 # install screen for backgrounding - can be removed with occurences if not needed
 type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
 fi
