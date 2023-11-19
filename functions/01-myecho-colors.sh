@@ -15,10 +15,8 @@ _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
 _MYECHO () {
-### Generate Formatted Output
-### v1.2 - added tput cols for controlling line lengh
-### v1.1 - added colors
-### v1.0 - line lengh added
+##### Generate Formatted Output
+### v1.3 - removed tput for box without ncurses
 # Idea from LinuxGuru Bruno V. @R0 ; ]
 
 _TAG=''
@@ -69,18 +67,16 @@ while (( "$#" )); do
   case "$1" in
   -n|--num) 
     if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-    _LINELENGH="$2"
-    shift 2
+      _LINELENGH="$2"
+      shift 2
     else
-    echo "$2 Line lengh missing.."; return
+      echo "$2 Line lengh missing.."; return
     fi
     ;;
   -c|--color) 
-    if [ -n "$2" ] && [ ${2:0:1} != "-" ] && [[ "$2" = @(blue|green|purple|red|blink|white) ]]; then
-    _COLORCHOICE="$2"
-    shift 2
-    else
-    echo "$2 Color unknown.."; return
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+      _COLORCHOICE="$2"
+      shift 2
     fi
     ;;
   -t|--title) _TAG='title'; shift 1 ;;
@@ -99,11 +95,17 @@ done
 # tag settings
 [ -z "$_TAG" ] && _TAG='equal'
 
-# Lengh settings
-if [ -z "$_LINELENGH" ]; then
-_LINELENGH=$(tput cols)
+# Length settings
+if [ -z "$_LINELENGTH" ]; then
+  if [ -n "$COLUMNS" ]; then
+    _LINELENGTH=$COLUMNS
+  else
+    _LINELENGTH=56
+  fi
 else
-[ "$_LINELENGH" -gt "$(tput cols)" ] && _LINELENGH=$(tput cols)
+  if [ -n "$COLUMNS" ] && [ "$_LINELENGTH" -gt "$COLUMNS" ]; then
+    _LINELENGTH=$COLUMNS
+  fi
 fi
 
 #  color settings
@@ -116,6 +118,7 @@ if [ ! -z "$_COLORCHOICE" ]; then
 	  red) _COLOR="${_RDX}";;
           purple) _COLOR="${_MVX}";;
           blink) _COLOR="${_BLK}";;
+          *) _COLOR="${_BLX}";;
   esac
 fi
 
