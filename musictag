@@ -4,20 +4,32 @@
 ### v0.2 - var rewrite for lead/trail spaces
 ### v0.1 - first rev + renaming
 
+# nice output
+type _BLU >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
+
+# usage
+[ "$1" = '-h' -o "$1" = '--help' ] && _MYECHO -p "Usage:
+# Accept mp3 file as only argument" && \
+echo "$(basename $0) /path/to/file.mp3
+
+" && exit 0
+
 ### AUTO INSTALLER / UPDATER for Termux
 if type pkg >/dev/null ; then
 # required pipx for easy install and update under venv
 type pip >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
 # install yt-dlp and update if bin older than 15 days
-find $(type -P eyeD3) -mtime +15 -exec python3 -m pipx install eyeD3 \; || python3 -m pipx upgrade eyeD3
+find $(type -P eyeD3) -mtime +15 -exec python3 -m pipx upgrade eyeD3 \; || python3 -m pipx install eyeD3
 fi
 
-# nice output
-type _BLU >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
-
-# mp3 file path as only argument
-[ -z "$1" ] && { echo "Artist name not found" && exit 1; } || _MP3="$@"
+# test mp3 file path as only argument
+[ -z "$1" ] && { echo "Please input file path as argument" && exit 1; } || _MP3="$@"
 [ -f "$_MP3" ] || { echo "$_MP3 is not a valid file.." &&  exit 1; }
+
+_MYECHO -l
+_MYECHO "MP3 file"
+[ "$(awk -F'.' '{print $NF}' <<<$_MP3)" = 'mp3' ] && _OK || { _KO; _MYECHO -c red -p "Not a valid mp3 file"; exit 1; }
+_MYECHO -c green -p "$_MP3"
 
 # mod IFS for files containing spaces
 _OLDIFS="$IFS" && IFS=''
@@ -29,9 +41,7 @@ _SONGZ="${_SONGZ#"${_SONGZ%%[![:space:]]*}"}"
 _SONGZ="${_SONGZ%"${_SONGZ##*[![:space:]]}"}"
 _ARTISTZ="${_ARTISTZ%"${_ARTISTZ##*[![:space:]]}"}"
 
-_MYECHO -l
-_MYECHO "MP3 file" && _OK 
-_MYECHO -c green -p "$_MP3Z"
+# MP3 Tag
 _MYECHO -s "tags:"
 eyeD3 "$_MP3"
 echo
@@ -54,6 +64,7 @@ case $REPLY in
     eyeD3 -a "$_ARTIST" -t "$_SONG" "$_MP3"
     ;;
 esac
+
 # File rename
 read -n 1 -p "Rename? [Yes/No/All] : "
 case $REPLY in
