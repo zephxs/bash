@@ -16,16 +16,14 @@ _RETRYLIST="$HOME/port-check-retry.list"
 _RETRYALARM(){
 [ -z "$_RETRYHOST" -o -z "$_RETRYPORT" ] && exit
 if ! nc -zw1 $_RETRYHOST $_RETRYPORT; then
-telegram-send -c alarm "${_RETRYFNAME}
-
-# Port Check Warning!
-# Host: ${_RETRYHOST}
+telegram-send -c alarm "Port Check Warning!
+# Host: ${_RETRYFNAME}
+# Addr: ${_RETRYHOST}
 # Port: ${_RETRYPORT}/tcp still NOT OPEN"
 else
-telegram-send -c alarm "${_RETRYFNAME}
-
-# Port Check Recover!
-# Host: ${_RETRYHOST}
+telegram-send -c alarm "Port Check Recover!
+# Host: ${_RETRYFNAME}
+# Addr: ${_RETRYHOST}
 # Port: ${_RETRYPORT}/tcp IS RE OPENED !"
 sed -i "/$_RETRYHOST/d" $_RETRYLIST
 fi
