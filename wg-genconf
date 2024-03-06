@@ -6,7 +6,7 @@
 # Default Server IP: 10.10.10.1/24 
 # Default PORT and Client output dir are set in #VARS
 # To be used server side
-
+#
 # REQUIREMENTS: WireGuard, ipcalc-ng
 
 # REQUIREMENTS: /etc/profile.d/01-myecho-colors.sh
@@ -18,7 +18,7 @@
 #  fi
 
 # get script version
-_VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
+_VERS=$(awk '/### v/ {print $0; exit}' $basename $0 |awk '{print $2}')
 
 # ensure script is run as root
 if [[ $EUID -ne 0 ]]; then
@@ -30,9 +30,9 @@ fi
 _WGCONFDIR='/etc/wireguard'
 _CLIENTKEYDIR="/root/wg-client-keys" # Client conf output Dir
 
-_ENDPOINT=''		# Tunnel Endpoint (default)
-_PORT='31194'		# Tunnel Port (default) | empty to remove default
-_DNS=''			# Tunnel DNS (default) | empty to remove default
+_ENDPOINT='wireguard.net'   # Tunnel Endpoint | empty to remove default
+_PORT='31194'           # Tunnel Port | empty to remove default
+_DNS='10.10.10.1'       # Tunnel DNS | empty to remove default
 _WGCONF=''		# WireGuard Config File (tunnel interface name)
 _IP=''			# Server or Client IP Address depending on mode
 _NAME=''		# Client Name
@@ -48,7 +48,7 @@ fi
 
 _USAGE () {
 _MYECHO -l
-_MYECHO -t "WireGuard Generator ### $_VERS"
+_MYECHO -t "WireGuard Generator ##### $_VERS"
 _MYECHO -p "       [MAIN OPTIONS]"
 _MYECHO -e "-c|--client" && echo "Gen. Client Config File (Default)"
 _MYECHO -e "-s|--server" && echo "Gen. Server Config File"
@@ -83,7 +83,7 @@ while (($#)); do
 done
 
 [ "$_QUIET" = false ] && _MYECHO -l
-[ "$_QUIET" = false ] && _MYECHO -t "WireGuard Generator ### $_VERS"
+[ "$_QUIET" = false ] && _MYECHO -t "WireGuard Generator ##### $_VERS"
 
 ### CHECKS and SETTINGS
 [ "$_QUIET" = false ] && _MYECHO -t "Checks"
@@ -156,30 +156,31 @@ if [ "$_GENCLIENT" = true ]; then
     exit 1
   fi
 
-# Check if Name is set for Client Generation
-_CHECKCLIENTNAME () {
-  if grep -wq "$_TMPNAME" $_WGCONF; then
-    [ "$_QUIET" = false ] && _MYECHO -e "Client Name:" && _KO ":$_TMPNAME already exists.."
-    read -p "Enter New WireGuard Client Name: " _TMPNAME
-    if grep -wq "$_TMPNAME" $_WGCONF; then
-      _CHECKCLIENTNAME
-    else
-      _NAME=$_TMPNAME
-    fi
-  fi
+  
+_CHECKCLIENTNAME(){
+_MYECHO -e "Search Client in Conf:" 
+while true; do
+if grep -Ewq "$_NAME" $_WGCONF; then
+  _KO ":$_NAME already exists.."
+  read -p "Enter New WireGuard Client Name: " _NAME
+  continue
+else
+  _OK ":\"$_NAME\" available!"
+  break
+fi
+done
 }
 
-# Check _NAME
+# Check + Select _NAME
   if [ -z "$_NAME" ]; then
-    read -p "Enter New WireGuard Client Name: " _TMPNAME
+    read -p "Enter New WireGuard Client Name: " _NAME
     _CHECKCLIENTNAME
   else
-    _TMPNAME=$_NAME _CHECKCLIENTNAME
+    _CHECKCLIENTNAME
   fi
-  if [ "$_QUIET" = false ]; then _MYECHO -e "Client Name:"
-  #[ "$_QUIET" = false ] && _KO ":Client Name is required.."
-    if [ -z "$_NAME" ]; then { _KO "Client Name is required.." && exit 1; } ; else _OK ":$_NAME"; fi
-  fi
+  _MYECHO -e "Client Name:"
+  if [ -z "$_NAME" ]; then { _KO ":Client Name is required.." && exit 1; } ; else _OK ":$_NAME"; fi
+  
 
 # Check _ENDPOINT
   [ "$_QUIET" = false ] && _MYECHO -e "Tunnel Endpoint"
@@ -332,8 +333,7 @@ if [ "$(systemctl is-active $_SERVICE)" = 0 ]; then
   systemctl restart $_SERVICE
   [ "$_QUIET" = false ] && _MYECHO -e "Restarting Server" && _OK ":$_SERVICE"
 else
-  systemctl start $_SERVICE
-  systemctl enable $_SERVICE
+  systemctl enable --now $_SERVICE
   [ "$_QUIET" = false ] && _MYECHO -e "Starting Server" && _OK ":$_SERVICE"
 fi
 }
