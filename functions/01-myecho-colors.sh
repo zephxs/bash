@@ -96,15 +96,15 @@ done
 [ -z "$_TAG" ] && _TAG='equal'
 
 # Length settings
-if [ -z "$_LINELENGTH" ]; then
+if [ -z "$_LINELENGH" ]; then
   if [ -n "$COLUMNS" ]; then
-    _LINELENGTH=$COLUMNS
+    _LINELENGH=$COLUMNS
   else
-    _LINELENGTH=56
+    _LINELENGH=56
   fi
 else
-  if [ -n "$COLUMNS" ] && [ "$_LINELENGTH" -gt "$COLUMNS" ]; then
-    _LINELENGTH=$COLUMNS
+  if [ -n "$COLUMNS" ] && [ "$_LINELENGH" -gt "$COLUMNS" ]; then
+    _LINELENGH=$COLUMNS
   fi
 fi
 
@@ -125,7 +125,6 @@ fi
 # set end of dot line @ 2/3 of line lengh
 _LINEHALF=$((_LINELENGH/5*3))
 _CHAINL=$(echo "${_MSG}" | wc -c)
-
 
 case "${_TAG}" in
   'blank')
