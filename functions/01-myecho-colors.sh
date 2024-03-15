@@ -98,13 +98,13 @@ done
 # Length settings
 if [ -z "$_LINELENGH" ]; then
   if [ -n "$COLUMNS" ]; then
-    _LINELENGH=$COLUMNS
+    _LINELENGH=$((COLUMNS/2))
   else
     _LINELENGH=56
   fi
 else
   if [ -n "$COLUMNS" ] && [ "$_LINELENGH" -gt "$COLUMNS" ]; then
-    _LINELENGH=$COLUMNS
+    _LINELENGH=$((COLUMNS/2))
   fi
 fi
 
