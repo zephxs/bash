@@ -54,11 +54,12 @@ done
 repsync () {
 ### v2.1 - sync all repos to a backup repo
 # here 'rep' is the backup repo (_DESTREPO), and all others repositories will be backed up in its own subfolder 
+_BAKREP='rep'
 # rsync is needed to delete files that does not exist anymore
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 # My Sync Repo name is 'rep' in this case
-if grep -qw rep$ "$HOME/.reporoot"; then
-  _DESTREPO=$(grep -w rep$ "$HOME/.reporoot")
+if grep -qw "$_BAKREP$" "$HOME/.reporoot"; then
+  _DESTREPO=$(grep -w "$_BAKREP$" "$HOME/.reporoot")
 else 
   echo "Backup Repo not found.. exiting!" && return 1
 fi
@@ -85,12 +86,14 @@ git push
 gitp () {
 ### v1.5 - add push and sync to back repo with : gitp "my comment"
 _COMMITMSG=$@
+# Backup repo set to avoid repo sync on the backup repo
+_BAKREP='rep'
 [ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
 _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 _MYECHO -l
 _MYECHO -t "Git - Commit and Sync"
 _MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
 git add .; git commit -m "$_COMMITMSG"; git push
-repsync
+[ "$_ORIGREP" = "$_BAKREP" ] || repsync
 }
 
