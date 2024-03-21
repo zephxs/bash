@@ -21,8 +21,22 @@ _MYECHO () {
 
 _TAG=''
 _MSG=''
-if [ -z "$_LINELENGH" -a -f "$HOME/.myechorc" ]; then
+
+# Length settings: write .myechorc with 2/3 screen lengh by default or "56" if $COLUMNS not set
+if [ -f "$HOME/.myechorc" ]; then
   source $HOME/.myechorc
+fi
+
+if [ -z "$_LINELENGH" ]; then
+  if [ -n "$COLUMNS" ]; then
+    echo "_LINELENGH=$((COLUMNS/2))" >$HOME/.myechorc
+  else
+    echo "_LINELENGH=56" >$HOME/.myechorc
+  fi
+else
+  if [ -n "$COLUMNS" ] && [ "$_LINELENGH" -gt "$COLUMNS" ]; then
+    _LINELENGH=$((COLUMNS/2))
+  fi
 fi
 
 _USAGE () {
@@ -87,121 +101,108 @@ while (( "$#" )); do
   -s|--start) _TAG='start'; shift 1 ;;
   -p|--print) _TAG='print'; shift 1 ;;
   -h|--help) _USAGE; return 1 ;;
-  #-*|--*) echo "Flag not recognised.." >&2; _USAGE; return ;;
   *) _MSG="${_MSG}${1}"; shift ;;
   esac
 done
 
-# tag settings
+# Tag default settings
 [ -z "$_TAG" ] && _TAG='equal'
 
-# Length settings
-if [ -z "$_LINELENGH" ]; then
-  if [ -n "$COLUMNS" ]; then
-    _LINELENGH=$((COLUMNS/2))
-  else
-    _LINELENGH=56
-  fi
-else
-  if [ -n "$COLUMNS" ] && [ "$_LINELENGH" -gt "$COLUMNS" ]; then
-    _LINELENGH=$((COLUMNS/2))
-  fi
-fi
-
-#  color settings
+# Color settings
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 if [ ! -z "$_COLORCHOICE" ]; then 
   case "${_COLORCHOICE}" in
-	  white) _COLOR="${_WHT}";;
-	  blue) _COLOR="${_BLX}";;
-	  green) _COLOR="${_GRX}";;
-	  red) _COLOR="${_RDX}";;
-          purple) _COLOR="${_MVX}";;
-          blink) _COLOR="${_BLK}";;
-          *) _COLOR="${_BLX}";;
+    white) _COLOR="${_WHT}";;
+    blue) _COLOR="${_BLX}";;
+    green) _COLOR="${_GRX}";;
+    red) _COLOR="${_RDX}";;
+    purple) _COLOR="${_MVX}";;
+    blink) _COLOR="${_BLK}";;
+    *) _COLOR="${_BLX}";;
   esac
 fi
 
-# set end of dot line @ 2/3 of line lengh
+# Set end of dot line @ 3/5 of line lengh
 _LINEHALF=$((_LINELENGH/5*3))
+# Get char num
 _CHAINL=$(echo "${_MSG}" | wc -c)
 
 case "${_TAG}" in
   'blank')
-  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-  _CHAINLENGH=$((_CHAINL + 2))
-  _LINE=$((_LINEHALF - _CHAINLENGH))
-  echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
-  _NVALUE=0
-  while [ "$_NVALUE" -lt "$_LINE" ]; do
-    echo -e " \c"
-    _NVALUE=$((_NVALUE+1))
-  done
-  return 0
-  ;;
+    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    _CHAINLENGH=$((_CHAINL + 2))
+    _LINE=$((_LINEHALF - _CHAINLENGH))
+    echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
+    _NVALUE=0
+    while [ "$_NVALUE" -lt "$_LINE" ]; do
+      echo -e " \c"
+      _NVALUE=$((_NVALUE+1))
+    done
+    return 0
+    ;;
   'dot')
-  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-  _CHAINLENGH=$((_CHAINL + 2))
-  _LINE=$((_LINEHALF - _CHAINLENGH))
-  echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
-  _NVALUE=0
-  while [ "$_NVALUE" -lt "$_LINE" ]; do
-    echo -e ".\c"
-    _NVALUE=$((_NVALUE+1))
-  done
-  return 0
-  ;;
+    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    _CHAINLENGH=$((_CHAINL + 2))
+    _LINE=$((_LINEHALF - _CHAINLENGH))
+    echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
+    _NVALUE=0
+    while [ "$_NVALUE" -lt "$_LINE" ]; do
+      echo -e ".\c"
+      _NVALUE=$((_NVALUE+1))
+    done
+    return 0
+    ;;
   'equal')
-  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-  _CHAINLENGH=$((_CHAINL + 3))
-  _LINE=$((_LINEHALF - _CHAINLENGH));
-  echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
-  _NVALUE=0;
-  while [ "$_NVALUE" -lt "$_LINE" ]; do
-      echo -e " \c";
-      _NVALUE=$((_NVALUE+1));
-  done;
-  echo -e "= \c"
-  return 0
-  ;;
+    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    _CHAINLENGH=$((_CHAINL + 3))
+    _LINE=$((_LINEHALF - _CHAINLENGH));
+    echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
+    _NVALUE=0;
+    while [ "$_NVALUE" -lt "$_LINE" ]; do
+      echo -e " \c"
+      _NVALUE=$((_NVALUE+1))
+    done
+    echo -e "= \c"
+    return 0
+    ;;
   'title')
-  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-  _CHAINLENGH=$((_CHAINL + 1))
-  _HTL=$((_LINELENGH - _CHAINLENGH))
-  _HTL2=$((_HTL /2))
-  _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
-  _NVALUE=0
-  while [ "$_NVALUE" -lt "$_HTL2" ]; do
-    echo -e "${_COLOR}#${_REZ}\c"
-    _NVALUE=$((_NVALUE+1))
-  done
-  echo -e " ${_COLOR}${_MSG}${_REZ} \c"
-  _NVALUE=0
-  while [ "$_NVALUE" -lt "$_HTL3" ]; do
-    echo -e "${_COLOR}#${_REZ}\c"
-    _NVALUE=$((_NVALUE+1))
-  done
-  echo
-  return 0
-  ;;
+    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    _CHAINLENGH=$((_CHAINL + 1))
+    _HTL=$((_LINELENGH - _CHAINLENGH))
+    _HTL2=$((_HTL /2))
+    _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
+    _NVALUE=0
+    while [ "$_NVALUE" -lt "$_HTL2" ]; do
+      echo -e "${_COLOR}#${_REZ}\c"
+      _NVALUE=$((_NVALUE+1))
+    done
+    echo -e " ${_COLOR}${_MSG}${_REZ} \c"
+    _NVALUE=0
+    while [ "$_NVALUE" -lt "$_HTL3" ]; do
+      echo -e "${_COLOR}#${_REZ}\c"
+      _NVALUE=$((_NVALUE+1))
+    done
+    echo
+    return 0
+    ;;
   'hashtag')
-  echo -e "${_COLOR}\c"
-  _NVALUE=0
-  while [ "$_NVALUE" -lt "$_LINELENGH" ]; do
-    echo -e "#\c"
-    _NVALUE=$((_NVALUE+1))
-  done
-  echo -e "${_REZ}"
-  return 0
-  ;;
+    echo -e "${_COLOR}\c"
+    _NVALUE=0
+    while [ "$_NVALUE" -lt "$_LINELENGH" ]; do
+      echo -e "#\c"
+      _NVALUE=$((_NVALUE+1))
+    done
+    echo -e "${_REZ}"
+    return 0
+    ;;
   'print')
-  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-  echo -e "${_COLOR}${_MSG}${_REZ}"
-  ;;
+    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    echo -e "${_COLOR}${_MSG}${_REZ}"
+    ;;
   'start')
-  [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-  echo -e "${_COLOR}#${_REZ} ${_MSG}"
-  ;;
+    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    echo -e "${_COLOR}#${_REZ} ${_MSG}"
+    ;;
 esac
 }
 
