@@ -1,21 +1,29 @@
 ### SSH AGENT SESSION LOADER
 sshagent-loader () {
-### v1.5 - Personal ssh multi session agent 
+### v1.6 - Local ssh multi session agent 
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
-export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
+# handle forwarded agent
+
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
-_VERS='v1.5'
+_VERS='v1.6'
 _MYECHO -t "SSH Agent MultiSession ### $_VERS"
 
 # function to get agent status from ssh-add exit code
-_SSHAG () { ssh-add -l >/dev/null 2>&1; _LOADRESULT=$? ; }
+_SSHAG (){ ssh-add -l >/dev/null 2>&1; _LOADRESULT=$?; }
+_EXPORTAGENT (){ export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"; }
 
+# chmod .ssh if not already user only readable, as we will store our agent here
+[ -d "$HOME/.ssh" ] || mkdir -p $HOME/.ssh
+[ "$(stat -c '%a %n' $HOME/.ssh)" = 700 ] || chmod 700 $HOME/.ssh
+
+# test agent and setup
 _SSHAG
 while [ "$_LOADRESULT" -ge 1 ]; do
   case $_LOADRESULT in
   2) # Agent not loaded
+    _EXPORTAGENT
     [ -e "$SSH_AUTH_SOCK" ] && rm -f "$SSH_AUTH_SOCK"
     ssh-agent -a "$SSH_AUTH_SOCK" >$HOME/.ssh/.ssh-agent
     _MYECHO -e "Test SSH agent"
@@ -35,7 +43,7 @@ while [ "$_LOADRESULT" -ge 1 ]; do
       _SSHAG
     else
       _MYECHO -e "Loaded SSH keys" && _KO ':None'
-      echo && return 0
+      return 0
     fi
     ;;
   *)
@@ -45,11 +53,11 @@ while [ "$_LOADRESULT" -ge 1 ]; do
   esac
 done
 
+# if reached, Agent is loaded with a key
 _MYECHO -e "Test SSH Agent"
 [ "$_LOADRESULT" = 0 ] && _OK ':Running' || _KO
 _KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
 _MYECHO -e "Loaded SSH keys" && _OK ":${_KEY}"
-echo
 }
 
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
@@ -59,7 +67,6 @@ sshagent-kill () {
 # v.1.4
 # get pid from exported agent
 _SSHPID () { awk -F'=|;' '/SSH_AGENT_PID/ {print $2}' <$HOME/.ssh/.ssh-agent ; }
-_MYECHO -l
 _BLU "### [dont] Kill the ssh-agent !"
 _MYECHO -e "Find Agent pid"
 if [ -z "$SSH_AGENT_PID" ]; then
@@ -69,11 +76,11 @@ if [ -z "$SSH_AGENT_PID" ]; then
     export SSH_AGENT_PID=$(_SSHPID)
   fi
   if [ ! -z "$SSH_AGENT_PID" ]; then
-    if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ":pid=$SSH_AGENT_PID"; else _KO ":NotRunning"; fi
+    if ps aux |grep -q $SSH_AGENT_PID; then _OK ":pid=$SSH_AGENT_PID"; else _KO ":NotRunning"; fi
   fi
 else
   [ "$SSH_AGENT_PID" != "$(_SSHPID)" ] && export SSH_AGENT_PID=$(_SSHPID)
-  if ps aux |grep -v grep|grep -q $SSH_AGENT_PID; then _OK ":pid=$SSH_AGENT_PID"; else _KO ":NotRunning"; fi
+  if ps aux |grep -q $SSH_AGENT_PID; then _OK ":pid=$SSH_AGENT_PID"; else _KO ":NotRunning"; fi
 fi
 _MYECHO -e "Remove Key"
 if ssh-add -D &>/dev/null; then _OK; else _KO ":NoKey"; fi
@@ -91,7 +98,7 @@ for _PROCESSID in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agen
   # stop if pid not own by user
   ps -p $_PROCESSID -F|grep -v grep|grep ssh-agent|awk '{print $1}'|grep -q $(id -un) || continue
   # stop if pid not numeric
-  [ "$(($_PROCESSID + 0))" -eq "$_PROCESSID" ] || continue
+  [[ "$_PROCESSID" =~ ^[0-9]+$ ]] || continue
   _RED "/!\ Check if PID match user ssh agent:"
   ps -p $i -F
   _RED "> kill PID $i ? [Y/n]"
