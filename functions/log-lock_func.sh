@@ -17,7 +17,7 @@ trap 'rm -f "$_LOCKFILE"' EXIT
 
 _LOG(){
 # _LOG "WARNING" "message"
-LOG_FILE="/var/log/myscript.log"
+LOG_FILE="/var/log/$(basename -s '.sh' $0).log"
 local _LEVEL="$1"
 local _MESSAGE="$2"
 local _TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
