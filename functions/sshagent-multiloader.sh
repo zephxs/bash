@@ -1,10 +1,10 @@
-### SSH AGENT SESSION LOADER
+#!/bin/bash
+
 sshagent-loader () {
 ### v1.6 - Local ssh multi session agent 
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
 # handle forwarded agent
-
 _MYSKEY="$HOME/.ssh/k2"
 _TIME="28800"
 _VERS='v1.6'
@@ -19,7 +19,10 @@ _EXPORTAGENT (){ export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"; }
 [ "$(stat -c '%a %n' $HOME/.ssh)" = 700 ] || chmod 700 $HOME/.ssh
 
 # test agent and setup
+[ -z "$SSH_AUTH_SOCK" ] && _EXPORTAGENT
 _SSHAG
+
+# Act accordingly to 'ssh-add' exit code
 while [ "$_LOADRESULT" -ge 1 ]; do
   case $_LOADRESULT in
   2) # Agent not loaded
@@ -46,7 +49,7 @@ while [ "$_LOADRESULT" -ge 1 ]; do
       return 0
     fi
     ;;
-  *)
+  *) # exit on any other output code
     _RED "### Unknown return code.. exit"
     return 1
     ;;
@@ -60,9 +63,10 @@ _KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
 _MYECHO -e "Loaded SSH keys" && _OK ":${_KEY}"
 }
 
+
+
+
 # set 'sshagent-kill' function to remove key, kill agents linked to our socket if more than one and remove socket
-
-
 sshagent-kill () {
 # v.1.4
 # get pid from exported agent
