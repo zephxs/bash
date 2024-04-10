@@ -5,13 +5,13 @@ sshagent-loader () {
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
 # handle forwarded agent
-_MYSKEY="$HOME/.ssh/k2"
-_TIME="28800"
-_VERS='v1.6'
+local _MYSKEY="$HOME/.ssh/k2"
+local _TIME="28800"
+local _VERS='v1.6'
 _MYECHO -t "SSH Agent MultiSession ### $_VERS"
 
 # function to get agent status from ssh-add exit code
-_SSHAG (){ ssh-add -l >/dev/null 2>&1; _LOADRESULT=$?; }
+_SSHAG (){ ssh-add -l >/dev/null 2>&1; local _LOADRESULT=$?; }
 _EXPORTAGENT (){ export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"; }
 
 # chmod .ssh if not already user only readable, as we will store our agent here
@@ -59,7 +59,7 @@ done
 # if reached, Agent is loaded with a key
 _MYECHO -e "Test SSH Agent"
 [ "$_LOADRESULT" = 0 ] && _OK ':Running' || _KO
-_KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
+local _KEY=$(ssh-add -l |awk -F'/| ' '{print $(NF-1)}')
 _MYECHO -e "Loaded SSH keys" && _OK ":${_KEY}"
 }
 

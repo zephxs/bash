@@ -22,8 +22,8 @@ _MYECHO () {
 ### v1.3 - removed tput for box without ncurses
 # Idea from LinuxGuru Bruno V. @R0 ; ]
 
-_TAG=''
-_MSG=''
+local _TAG=''
+local _MSG=''
 
 # Length settings: write .myechorc with 2/3 screen lengh by default or "56" if $COLUMNS not set
 if [ -f "$HOME/.myechorc" ]; then
@@ -96,105 +96,105 @@ while (( "$#" )); do
       shift 2
     fi
     ;;
-  -t|--title) _TAG='title'; shift 1 ;;
-  -l|--line) _TAG='hashtag'; shift 1 ;;
-  -d|--dot) _TAG='dot'; shift 1 ;;
-  -e|--equal) _TAG='equal'; shift 1 ;;
-  -b|--blank) _TAG='blank'; shift 1 ;;
-  -s|--start) _TAG='start'; shift 1 ;;
-  -p|--print) _TAG='print'; shift 1 ;;
+  -t|--title) local _TAG='title'; shift 1 ;;
+  -l|--line) local _TAG='hashtag'; shift 1 ;;
+  -d|--dot) local _TAG='dot'; shift 1 ;;
+  -e|--equal) local _TAG='equal'; shift 1 ;;
+  -b|--blank) local _TAG='blank'; shift 1 ;;
+  -s|--start) local _TAG='start'; shift 1 ;;
+  -p|--print) local _TAG='print'; shift 1 ;;
   -h|--help) _USAGE; return 1 ;;
-  *) _MSG="${_MSG}${1}"; shift ;;
+  *) local _MSG="${_MSG}${1}"; shift ;;
   esac
 done
 
 # Tag default settings
-[ -z "$_TAG" ] && _TAG='equal'
+[ -z "$_TAG" ] && local _TAG='equal'
 
 # Color settings
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 if [ ! -z "$_COLORCHOICE" ]; then 
   case "${_COLORCHOICE}" in
-    w*|white) _COLOR="${_WHT}";;
-    b*|blue) _COLOR="${_BLX}";;
-    g*|green) _COLOR="${_GRX}";;
-    r*|red) _COLOR="${_RDX}";;
-    p*|purple) _COLOR="${_MVX}";;
-    o*|orange) _COLOR="${_ORX}";;
-    B|blink) _COLOR="${_BLK}";;
-    *) _COLOR="${_BLX}";;
+    w*|white) local _COLOR="${_WHT}";;
+    b*|blue) local _COLOR="${_BLX}";;
+    g*|green) local _COLOR="${_GRX}";;
+    r*|red) local _COLOR="${_RDX}";;
+    p*|purple) local _COLOR="${_MVX}";;
+    o*|orange) local _COLOR="${_ORX}";;
+    B|blink) local _COLOR="${_BLK}";;
+    *) local _COLOR="${_BLX}";;
   esac
 fi
 
 # Set end of dot line @ 3/5 of line lengh
-_LINEHALF=$((_LINELENGH/5*3))
+local _LINEHALF=$((_LINELENGH/5*3))
 # Get char num
-_CHAINL=$(echo "${_MSG}" | wc -c)
+local _CHAINL=$(echo "${_MSG}" | wc -c)
 
 case "${_TAG}" in
   'blank')
     [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-    _CHAINLENGH=$((_CHAINL + 2))
-    _LINE=$((_LINEHALF - _CHAINLENGH))
+    local _CHAINLENGH=$((_CHAINL + 2))
+    local _LINE=$((_LINEHALF - _CHAINLENGH))
     echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
-    _NVALUE=0
+    local _NVALUE=0
     while [ "$_NVALUE" -lt "$_LINE" ]; do
       echo -e " \c"
-      _NVALUE=$((_NVALUE+1))
+      local _NVALUE=$((_NVALUE+1))
     done
     return 0
     ;;
   'dot')
     [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-    _CHAINLENGH=$((_CHAINL + 2))
-    _LINE=$((_LINEHALF - _CHAINLENGH))
+    local _CHAINLENGH=$((_CHAINL + 2))
+    local _LINE=$((_LINEHALF - _CHAINLENGH))
     echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
-    _NVALUE=0
+    local _NVALUE=0
     while [ "$_NVALUE" -lt "$_LINE" ]; do
       echo -e ".\c"
-      _NVALUE=$((_NVALUE+1))
+      local _NVALUE=$((_NVALUE+1))
     done
     return 0
     ;;
   'equal')
     [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-    _CHAINLENGH=$((_CHAINL + 3))
-    _LINE=$((_LINEHALF - _CHAINLENGH));
+    local _CHAINLENGH=$((_CHAINL + 3))
+    local _LINE=$((_LINEHALF - _CHAINLENGH));
     echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
-    _NVALUE=0;
+    local _NVALUE=0;
     while [ "$_NVALUE" -lt "$_LINE" ]; do
       echo -e " \c"
-      _NVALUE=$((_NVALUE+1))
+      local _NVALUE=$((_NVALUE+1))
     done
     echo -e "= \c"
     return 0
     ;;
   'title')
     [ -z "$_MSG" ] && { echo "Message missing.."; return; }
-    _CHAINLENGH=$((_CHAINL + 1))
-    _HTL=$((_LINELENGH - _CHAINLENGH))
-    _HTL2=$((_HTL /2))
-    _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
-    _NVALUE=0
+    local _CHAINLENGH=$((_CHAINL + 1))
+    local _HTL=$((_LINELENGH - _CHAINLENGH))
+    local _HTL2=$((_HTL /2))
+    local _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
+    local _NVALUE=0
     while [ "$_NVALUE" -lt "$_HTL2" ]; do
       echo -e "${_COLOR}#${_REZ}\c"
-      _NVALUE=$((_NVALUE+1))
+      local _NVALUE=$((_NVALUE+1))
     done
     echo -e " ${_COLOR}${_MSG}${_REZ} \c"
-    _NVALUE=0
+    local _NVALUE=0
     while [ "$_NVALUE" -lt "$_HTL3" ]; do
       echo -e "${_COLOR}#${_REZ}\c"
-      _NVALUE=$((_NVALUE+1))
+      local _NVALUE=$((_NVALUE+1))
     done
     echo
     return 0
     ;;
   'hashtag')
     echo -e "${_COLOR}\c"
-    _NVALUE=0
+    local _NVALUE=0
     while [ "$_NVALUE" -lt "$_LINELENGH" ]; do
       echo -e "#\c"
-      _NVALUE=$((_NVALUE+1))
+      local _NVALUE=$((_NVALUE+1))
     done
     echo -e "${_REZ}"
     return 0

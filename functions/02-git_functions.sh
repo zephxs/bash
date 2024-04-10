@@ -13,7 +13,7 @@ if [ ! -f "$HOME/.reporoot" ]; then
   cat $HOME/.reporoot; echo
   read -p "# Edit repos that will sync? " -n 1 -r
   [[ "$REPLY" =~ ^[Yy]$ ]] && vim $HOME/.reporoot
-  _REPOROOT=$(cat $HOME/.reporoot)
+  local _REPOROOT=$(cat $HOME/.reporoot)
   echo
 fi
 }
@@ -21,8 +21,8 @@ fi
 pullup () {
 ### Pull all repos and branches at once
 ### v1.4 - add quiet mode
-_VERS='v1.4'
-[ -f "$HOME/.reporoot" ] && _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
+local _VERS='v1.4'
+[ -f "$HOME/.reporoot" ] && local _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
 if [ "$1" != "-q" ]; then
 _MYECHO -l
 _MYECHO -t "Git - Pull all Repos ### $_VERS"
@@ -36,7 +36,6 @@ _MYECHO -p "### Repo = $_REP"
 fi
  cd $_REP || continue
  for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
-
   # Swap comment on the 2 next lines to suit your needs
   if [ "$1" != "-q" ]; then
   git switch "$_BRANCH"
@@ -54,16 +53,16 @@ done
 repsync () {
 ### v2.1 - sync all repos to a backup repo
 # here 'rep' is the backup repo (_DESTREPO), and all others repositories will be backed up in its own subfolder 
-_BAKREP='rep'
+local _BAKREP='rep'
 # rsync is needed to delete files that does not exist anymore
 [ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 # My Sync Repo name is 'rep' in this case
 if grep -qw "$_BAKREP$" "$HOME/.reporoot"; then
-  _DESTREPO=$(grep -w "$_BAKREP$" "$HOME/.reporoot")
+  local _DESTREPO=$(grep -w "$_BAKREP$" "$HOME/.reporoot")
 else 
   echo "Backup Repo not found.. exiting!" && return 1
 fi
-_SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
+local _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
 _MYECHO -l
 _MYECHO -t "Git - Repos Sync"
 [ -z "$_DESTREPO" ] && echo "Destination Repository not set.. exiting!" && return 1
@@ -85,11 +84,11 @@ git push
 
 gitp () {
 ### v1.5 - add push and sync to back repo with : gitp "my comment"
-_COMMITMSG=$@
+local _COMMITMSG=$@
 # Backup repo set to avoid repo sync on the backup repo
-_BAKREP='rep'
+local _BAKREP='rep'
 [ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
-_ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
+local _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
 _MYECHO -l
 _MYECHO -t "Git - Commit and Sync"
 _MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
