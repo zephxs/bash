@@ -11,7 +11,7 @@ local _VERS='v1.6'
 _MYECHO -t "SSH Agent MultiSession ### $_VERS"
 
 # function to get agent status from ssh-add exit code
-_SSHAG (){ ssh-add -l >/dev/null 2>&1; local _LOADRESULT=$?; }
+_SSHAG (){ ssh-add -l >/dev/null 2>&1; _LOADRESULT=$?; }
 _EXPORTAGENT (){ export SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"; }
 
 # chmod .ssh if not already user only readable, as we will store our agent here
