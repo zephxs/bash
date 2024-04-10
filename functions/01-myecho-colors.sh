@@ -5,14 +5,17 @@ _RDX='\e[1;31m'
 _BLX='\e[1;34m'
 _GRX='\e[1;32m'
 _MVX='\e[1;95m'
+_ORX='\e[38;5;208m'
 _BLINK () { echo -e "${_BLK}${@}${_REZ}" ; }
 _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 _RED () { echo -e "${_RDX}${@}${_REZ}" ; }
 _GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
 _MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
+_ORA () { echo -e "${_ORX}${@}${_REZ}" ; }
 _WHT () { echo -e "${_REZ}${@}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
+
 
 _MYECHO () {
 ##### Generate Formatted Output
@@ -39,7 +42,7 @@ else
   fi
 fi
 
-_USAGE () {
+_MYECHO_USAGE () {
 _BLU "Generate options:"
 echo -e "	-b|--blank 	= Blank line (Default)"
 echo -e "${_BLX}#${_REZ} [text]                            ${_BLK}[/wait]${_REZ}"
@@ -112,12 +115,13 @@ done
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
 if [ ! -z "$_COLORCHOICE" ]; then 
   case "${_COLORCHOICE}" in
-    white) _COLOR="${_WHT}";;
-    blue) _COLOR="${_BLX}";;
-    green) _COLOR="${_GRX}";;
-    red) _COLOR="${_RDX}";;
-    purple) _COLOR="${_MVX}";;
-    blink) _COLOR="${_BLK}";;
+    w*|white) _COLOR="${_WHT}";;
+    b*|blue) _COLOR="${_BLX}";;
+    g*|green) _COLOR="${_GRX}";;
+    r*|red) _COLOR="${_RDX}";;
+    p*|purple) _COLOR="${_MVX}";;
+    o*|orange) _COLOR="${_ORX}";;
+    B|blink) _COLOR="${_BLK}";;
     *) _COLOR="${_BLX}";;
   esac
 fi
