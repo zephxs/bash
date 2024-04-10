@@ -33,8 +33,19 @@ if ! type -P telegram-send &>/dev/null; then
 fi
 # check if _MYECHO is present
 _CHECKMYECHO(){ 
-if ! type -t _MYECHO &>/dev/null;then
-  . /etc/profile.d/01-myecho-colors.sh
+# Load myecho for nicer output
+if ! type _MYECHO >/dev/null 2>&1; then
+  if [ -f "/etc/profile.d/01-myecho-colors.sh" ]; then
+    source /etc/profile.d/01-myecho-colors.sh >/dev/null 2>&1
+  elif [ -f "$HOME/01-myecho-colors.sh" ]; then
+    source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+  else
+    echo "Nice Output - Install 'myecho' function (in homedir: 01-myecho-colors.sh)"
+    cd "$HOME"
+    curl -s -LO https://raw.githubusercontent.com/zephxs/bash/master/functions/01-myecho-colors.sh
+    head -20 01-myecho-colors.sh |grep -q "^_MYECHO () {" && echo "myecho installed!" || { echo "myecho install failed, exit.."; exit 1; }
+    source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+  fi
 fi
 }
 
