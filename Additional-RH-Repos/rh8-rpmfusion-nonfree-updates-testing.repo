@@ -1,0 +1,27 @@
+[rpmfusion-nonfree-updates-testing]
+name=RPM Fusion for EL 8 - Nonfree - Test Updates
+#baseurl=http://download1.rpmfusion.org/nonfree/el/updates/testing/8/$basearch/
+mirrorlist=http://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-el-updates-testing-8&arch=$basearch
+enabled=0
+type=rpm-md
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-el-8
+
+[rpmfusion-nonfree-updates-testing-debuginfo]
+name=RPM Fusion for EL 8 - Nonfree - Test Updates Debug
+#baseurl=http://download1.rpmfusion.org/nonfree/el/updates/testing/8/$basearch/debug/
+mirrorlist=http://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-el-updates-testing-debug-8&arch=$basearch
+enabled=0
+type=rpm-md
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-el-8
+
+[rpmfusion-nonfree-updates-testing-source]
+name=RPM Fusion for EL 8 - Nonfree - Test Updates Source
+#baseurl=http://download1.rpmfusion.org/nonfree/el/updates/testing/8/SRPMS/
+mirrorlist=http://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-el-updates-testing-source-8&arch=$basearch
+enabled=0
+type=rpm-md
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-el-8
+
