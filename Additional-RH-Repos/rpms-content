@@ -1,0 +1,63 @@
+### ELREPO
+
+# elrepo-release-8.el8.elrepo.noarch.rpm  
+./etc/pki/elrepo
+./etc/pki/elrepo/SECURE-BOOT-KEY-elrepo.org.der
+./etc/pki/rpm-gpg
+./etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+./etc/yum.repos.d
+./etc/yum.repos.d/elrepo.repo
+
+# elrepo-release-9.el9.elrepo.noarch.rpm  
+./etc/pki/elrepo
+./etc/pki/elrepo/SECURE-BOOT-KEY-elrepo.org.der
+./etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+./etc/yum.repos.d/elrepo.repo
+
+
+
+### RMP FUSION
+
+# epel-release-latest-8.noarch.rpm 
+./etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+./etc/yum.repos.d/epel-modular.repo
+./etc/yum.repos.d/epel-testing-modular.repo
+./etc/yum.repos.d/epel-testing.repo
+./etc/yum.repos.d/epel.repo
+./usr/bin/crb
+./usr/lib/systemd/system-preset/90-epel.preset
+./usr/share/doc/epel-release
+./usr/share/doc/epel-release/README-epel-8-packaging.md
+./usr/share/licenses/epel-release
+./usr/share/licenses/epel-release/GPL
+
+# epel-release-latest-9.noarch.rpm 
+./etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-9
+./etc/yum.repos.d/epel-cisco-openh264.repo
+./etc/yum.repos.d/epel-testing.repo
+./etc/yum.repos.d/epel.repo
+./usr/bin/crb
+./usr/lib/systemd/system-preset/90-epel.preset
+./usr/share/licenses/epel-release
+./usr/share/licenses/epel-release/GPL
+
+# rpmfusion-free-release-8.noarch.rpm 
+./etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-free-el-8
+./etc/yum.repos.d/rpmfusion-free-updates-testing.repo
+./etc/yum.repos.d/rpmfusion-free-updates.repo
+
+# rpmfusion-free-release-9.noarch.rpm 
+./etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-free-el-9
+./etc/yum.repos.d/rpmfusion-free-updates-testing.repo
+./etc/yum.repos.d/rpmfusion-free-updates.repo
+
+# rpmfusion-nonfree-release-8.noarch.rpm
+./etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-el-8
+./etc/yum.repos.d/rpmfusion-nonfree-updates-testing.repo
+./etc/yum.repos.d/rpmfusion-nonfree-updates.repo
+
+# rpmfusion-nonfree-release-9.noarch.rpm 
+./etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-el-9
+./etc/yum.repos.d/rpmfusion-nonfree-updates-testing.repo
+./etc/yum.repos.d/rpmfusion-nonfree-updates.repo
+
