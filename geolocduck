@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Simple script to get current Wan IP + Geolocation from Duckduckgo
+### v1.4 - adapt to DuckDuck Answer Country only in certain conditions
 ### v1.3 - removed temp file and awk correction
 ### v1.2 - Added option to get only Wan IP (-o) and awk output (-a) if specified
 ### v1.1 - Added colors and myecho functions (available in 'functions' dir in the same repo)
@@ -8,7 +9,7 @@
 _VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # test internet access
-nc -zw1 duckduckgo.com 443 || { echo "# No Internet Access, exiting.." && exit 1; }
+nc -zw1 duckduckgo.com 443 >/dev/null 2>&1 || { echo "# No Internet Access, exiting.." && exit 1; }
 
 while (( $# )); do
   case $1 in
@@ -41,14 +42,19 @@ fi
 
 ### Main
 # Query duckduckgo.com for "ip address" terms
-_TMPRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//')
+_TMPRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/')
 
 # Set Vars for proper display
+if [ $(echo "$_TMPRESULT" |wc -w) -le 4 ]; then 
+_IP=$(echo "$_TMPRESULT" |awk '{print $1}')
+_COUNTRY=$(echo "$_TMPRESULT" |awk -F', | ' '{print $(NF)}')
+else
 _IP=$(echo "$_TMPRESULT" |awk '{print $1}')
 _ZIPCODE=$(echo "$_TMPRESULT" |awk '{print $NF}')
 _CITY=$(echo "$_TMPRESULT" |awk -F' in |, ' '{print $2}')
 _PROVINCE=$(echo "$_TMPRESULT" |awk -F', ' '{print $2}')
 _COUNTRY=$(echo "$_TMPRESULT" |awk -F', | ' '{print $(NF-1)}')
+fi
 
 # If only IP is requested, show it and exit
 if [[ $_ONLYIP -eq 1 ]]; then
@@ -62,12 +68,18 @@ _AWKRESULT () {
 }
 
 _MYRESULT () {
+if [ -z "$_ZIPCODE" ]; then
+  _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
+  _MYECHO -e "IP" && echo $_IP
+  _MYECHO -e "Country" && echo $_COUNTRY
+else
   _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
   _MYECHO -e "IP" && echo $_IP
   _MYECHO -e "City" && echo $_CITY
   _MYECHO -e "ZipCode" && echo $_ZIPCODE
   _MYECHO -e "Province" && echo $_PROVINCE
   _MYECHO -e "Country" && echo $_COUNTRY
+fi
 }
 
 # Show results
