@@ -1,11 +1,11 @@
 ### colors
-_REZ='\e[0m'
-_BLK='\033[5m'
-_RDX='\e[1;31m'
-_BLX='\e[1;34m'
-_GRX='\e[1;32m'
-_MVX='\e[1;95m'
-_ORX='\e[38;5;208m'
+export _REZ='\e[0m'
+export _BLK='\033[5m'
+export _RDX='\e[1;31m'
+export _BLX='\e[1;34m'
+export _GRX='\e[1;32m'
+export _MVX='\e[1;95m'
+export _ORX='\e[38;5;208m'
 _BLINK () { echo -e "${_BLK}${@}${_REZ}" ; }
 _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 _RED () { echo -e "${_RDX}${@}${_REZ}" ; }
@@ -103,7 +103,7 @@ while (( "$#" )); do
   -b|--blank) local _TAG='blank'; shift 1 ;;
   -s|--start) local _TAG='start'; shift 1 ;;
   -p|--print) local _TAG='print'; shift 1 ;;
-  -h|--help) _USAGE; return 1 ;;
+  -h|--help) _MYECHO_USAGE; return 1 ;;
   *) local _MSG="${_MSG}${1}"; shift ;;
   esac
 done

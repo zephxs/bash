@@ -73,7 +73,7 @@ for _DIR in $_SYNCREPOS; do
  rm -rf .git README.md LICENSE
 done
 cd ${_DESTREPO}
-git add .
+git add -A
 if [ -z "_ORIGREP" ]; then
 git commit -m "#Sync=$(date +"%H:%M-%d.%m.%Y")"
 else
@@ -92,7 +92,9 @@ local _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq
 _MYECHO -l
 _MYECHO -t "Git - Commit and Sync"
 _MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
-git add .; git commit -m "$_COMMITMSG"; git push
+git add -A
+git commit -m "$_COMMITMSG"
+git push
 [ "$_ORIGREP" = "$_BAKREP" ] || repsync
 }
 
