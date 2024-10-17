@@ -1,0 +1,124 @@
+#!/bin/bash
+### exec shell script remotely as root
+
+# vars
+_SRV=""
+_SCRPTSRC="$HOME/remote-scripts"
+_LST="$HOME/list"
+_LOGFOLDER="$HOME/logs"
+
+_SCRPT="${_LOGFOLDER}/remote.scr"
+
+[ ! -d "$_LOGFOLDER" ] && mkdir "$_LOGFOLDER"
+
+# color
+if ! type _MYECHO >/dev/null 2>&1; then
+  if [ -f "/etc/profile.d/01-myecho-colors.sh" ]; then
+    source /etc/profile.d/01-myecho-colors.sh >/dev/null 2>&1
+  elif [ -f "$HOME/01-myecho-colors.sh" ]; then
+    source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+  else
+    echo "Nice Output - Install 'myecho' function (in homedir: 01-myecho-colors.sh)"
+    cd "$HOME"
+    curl -s -LO https://raw.githubusercontent.com/zephxs/bash/master/functions/01-myecho-colors.sh
+    head -20 01-myecho-colors.sh |grep -q "^_MYECHO () {" && echo "myecho installed!" || { echo "myecho install failed, exit.."; exit 1; }
+    source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+  fi
+fi
+
+# hekop
+_HELPFUNCTION(){
+echo -e "### Remote Exec
+# execute remote code from: $HOME/remote-script
+# on server list: $HOME/list
+# local logs location: $HOME/logs/
+
+# or provide script or list file with
+# Usage:
+-s|--script		# script file to execute
+-l|--list)		# list file with server names
+*			# server name
+
+# Exemples:
+$(basename $0) -s myscript.sh -l server.list
+$(basename $0) hostname
+"
+}
+
+
+while (( "$#" )); do
+  case "$1" in
+    -s|--script)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        _SCRPTSRC="$2"; shift 2;
+      else
+        echo "$2 Source Script missing..";
+        return;
+      fi
+      ;;
+    -l|--list)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        _LST="$2"; shift 2;
+      else
+        echo "$2 List file missing.."; return;
+      fi
+      ;;
+    -h|--help)
+      _HELPFUNCTION
+      exit
+      ;;
+    *) _SRV="$1"; shift
+      ;;
+  esac;
+done
+
+# input command if no script provided or script file is empty
+if [ ! -s "${_SCRPTSRC}" ]; then
+  echo "Input command line to remote exec :"
+  read -p "# " _INP
+  echo "$_INP" >> ${_SCRPTSRC}
+  echo
+fi
+# show server list and script to run + validation
+if [ -s "${_SCRPTSRC}" ]; then
+  _BLU "# Server list = ${_LST} :"
+  [ ! -z "$_SRV" ] && echo $_SRV || cat ${_LST}
+  echo
+  _BLU "# input command :" | tee -a ${_LOG}
+  cat ${_SCRPTSRC} | grep -Ev '^$|^#' | tee -a ${_LOG}
+  echo
+  _GRN "Press 'c' to Cancel, or any other key to Continue.."
+  read -n 1
+  if [ "$REPLY" = 'c' ]; then echo && exit 1 ; fi
+fi
+
+# exec function to run on each server
+_EXECR () {
+  _LOG="${_LOGFOLDER}/${_SRV}.$(date +"%d%m%Y_%H%M%S").log"
+  cat ${_SCRPTSRC} > $_SCRPT
+  echo "################################" | tee -a ${_LOG}
+  echo "### Server = $_SRV" | tee -a ${_LOG}
+  echo "### Date   = $(date +'%d/%m/%Y %H:%M')" | tee -a ${_LOG}
+  echo "### Cmds   = " >> ${_LOG}
+  cat ${_SCRPTSRC} >> ${_LOG}
+  echo "### Output = " | tee -a ${_LOG}
+  #ssh -o StrictHostKeyChecking=no -o BatchMode=true -o ConnectTimeout=5 $_SRV TERM=xterm 'sudo -i bash -s' < ${_SCRPT} | tee -a $_LOG
+  #ssh -o StrictHostKeyChecking=no -o BatchMode=true -o ConnectTimeout=5 $_SRV 'sudo -i bash -s' < ${_SCRPT} | tee -a $_LOG
+  ssh -o StrictHostKeyChecking=no -o BatchMode=true -o ConnectTimeout=3 $_SRV TERM=xterm 'bash -s' < ${_SCRPT} | tee -a ${_LOG}
+  echo "" >> ${_LOG}
+}
+
+# main
+if [ -z "$_SRV" ]; then
+  if [ -s "${_LST}" ]; then
+    for _SRV in $(cat ${_LST}); do
+    _EXECR
+    done
+  else
+    _MAV "No server in file list.."
+    read -p "Please Enter Server name: " _SRV
+    _EXECR
+  fi
+else
+  _EXECR
+fi
