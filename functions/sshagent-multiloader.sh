@@ -6,8 +6,7 @@ sshagent-loader () {
 # set fixed agent socket and default key to load
 # set key life time / empty for not setting lifetime
 # handle forwarded agent
-#local _MYSKEY="$HOME/.ssh/k2"
-local _SETKEY=""
+local _SETKEY=""        # set default keys to load
 local _TIME="28800"
 local _VERS='v2.0'
 unset _SSHKARRAY
