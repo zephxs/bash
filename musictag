@@ -27,11 +27,19 @@ echo "$(basename $0) /path/to/file.mp3
 " && exit 0
 
 ### AUTO INSTALLER / UPDATER for Termux
-if type pkg >/dev/null ; then
-# required pipx for easy install and update under venv
-type pip >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
-# install yt-dlp and update if bin older than 15 days
-find $(type -P eyeD3) -mtime +15 -exec python3 -m pipx upgrade eyeD3 \; || python3 -m pipx install eyeD3
+# required pipx for easy install and update with venv
+if type pip >/dev/null; then
+  echo "... Installing pip"
+  pkg install python3
+fi
+if type pipx >/dev/null ; then
+  echo "... Installing pipx"
+  python3 -m pip install pipx
+fi
+# install eyeD3
+if type eyeD3 >/dev/null; then
+  echo "... Installing EyeD3"
+  python3 -m pipx install eyeD3
 fi
 
 # test mp3 file path as only argument
