@@ -9,7 +9,7 @@
 _VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # test internet access
-nc -zw1 duckduckgo.com 443 >/dev/null 2>&1 || { echo "# No Internet Access, exiting.." && exit 1; }
+ping -c 1 8.8.8.8 >/dev/null 2>&1 || { echo "# No Internet Access, exiting.." && exit 1; }
 
 while (( $# )); do
   case $1 in
@@ -41,8 +41,12 @@ if ! type _MYECHO >/dev/null 2>&1; then
 fi
 
 ### Main
+_MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
+
 # Query duckduckgo.com for "ip address" terms
+_MYECHO "WebQuery"
 _TMPRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/')
+[ "$?" = 0 ] && _OK || { _KO ":Data not received correctly"; exit 1; }
 
 # Set Vars for proper display
 if [ $(echo "$_TMPRESULT" |wc -w) -le 4 ]; then 
@@ -63,17 +67,15 @@ if [[ $_ONLYIP -eq 1 ]]; then
 fi
 
 _AWKRESULT () {
-  echo "########## IP DuckDuck Geoloc ### $_VERS ##########"
+  #echo "########## IP DuckDuck Geoloc ### $_VERS ##########"
   echo "$_TMPRESULT" |awk '{print "# IP: " $1"\n# City: " $3"\n# ZipCode: " $NF"\n# Province: " $4"\n# Country: " $(NF-1)}' |sed 's/,//'
 }
 
 _MYRESULT () {
 if [ -z "$_ZIPCODE" ]; then
-  _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
   _MYECHO -e "IP" && echo $_IP
   _MYECHO -e "Country" && echo $_COUNTRY
 else
-  _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
   _MYECHO -e "IP" && echo $_IP
   _MYECHO -e "City" && echo $_CITY
   _MYECHO -e "ZipCode" && echo $_ZIPCODE
