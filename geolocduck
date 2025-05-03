@@ -9,7 +9,13 @@
 _VERS=$(awk '/### v/ {print $2; exit}' $basename $0)
 
 # test internet access
-ping -c 1 8.8.8.8 >/dev/null 2>&1 || { echo "# No Internet Access, exiting.." && exit 1; }
+if ! ping -c 1 -w 1 8.8.8.8 >/dev/null 2>&1; then
+  echo -n >/dev/tcp/8.8.8.8/53
+  if [ "$?" -ne 0 ]; then
+    echo "# No Internet Access, exiting.."
+    exit 1
+  fi
+fi
 
 while (( $# )); do
   case $1 in
