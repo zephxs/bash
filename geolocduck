@@ -51,7 +51,7 @@ _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
 
 # Query duckduckgo.com for "ip address" terms
 _MYECHO "WebQuery"
-_TMPRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/')
+_TMPRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/; s/\\u00e9/é/; s/\\u00e8/è/; s/\\u00ea/ê/; s/\\u00e0/à/')
 [ "$?" = 0 ] && _OK || { _KO ":Data not received correctly"; exit 1; }
 
 # Set Vars for proper display
