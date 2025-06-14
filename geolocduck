@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Simple script to get current Wan IP + Geolocation from Duckduckgo
+### v1.6 - Rework "only IP" and "awk" options
 ### v1.5 - 2 step URL parse due to awk error on certain string
 ### v1.4 - adapt to DuckDuck Answer Country only in certain conditions
 ### v1.3 - removed temp file and awk correction
@@ -20,55 +21,68 @@ fi
 
 while (( $# )); do
   case $1 in
-    -o|--only-ip) _ONLYIP=1; shift ;;
+    -o|--only-ip) _ONLYIP="1"; shift ;;
     -h|--help) echo "Usage: $0 [-o|--only-ip]"
       echo "  -o|--only-ip  Get only the IP address"
+      echo "  -a|--awk      Get awk result [no myecho]"
       echo "  -h|--help     Show this help"
       exit 0
       ;;
-    -a|--awk) _AWK=1; shift ;;
+    -a|--awk) _AWK="1"; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
 
 # Load myecho for nicer output
-if ! type _MYECHO >/dev/null 2>&1; then
-  if [ -f "/etc/profile.d/01-myecho-colors.sh" ]; then
-    source /etc/profile.d/01-myecho-colors.sh >/dev/null 2>&1
-  elif [ -f "$HOME/01-myecho-colors.sh" ]; then
-    source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
-  else
-    echo "Nice Output - Install 'myecho' function (in homedir: 01-myecho-colors.sh)"
-    cd "$HOME"
-    curl -s -LO https://raw.githubusercontent.com/zephxs/bash/master/functions/01-myecho-colors.sh
-    head -20 01-myecho-colors.sh |grep -q "^_MYECHO () {" && echo "myecho installed!" || { echo "myecho install failed, exit.."; exit 1; }
-    source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+if [ -z "$_AWK" ]; then
+  if ! type _MYECHO >/dev/null 2>&1; then
+    if [ -f "/etc/profile.d/01-myecho-colors.sh" ]; then
+      source /etc/profile.d/01-myecho-colors.sh >/dev/null 2>&1
+    elif [ -f "$HOME/01-myecho-colors.sh" ]; then
+      source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+    else
+      echo "Nice Output - Install 'myecho' function (in homedir: 01-myecho-colors.sh)"
+      cd "$HOME"
+      curl -s -LO https://raw.githubusercontent.com/zephxs/bash/master/functions/01-myecho-colors.sh
+      head -20 01-myecho-colors.sh |grep -q "^_MYECHO () {" && echo "myecho installed!" || { echo "myecho install failed, exit.."; exit 1; }
+      source "$HOME/01-myecho-colors.sh" >/dev/null 2>&1
+    fi
   fi
 fi
 
 ### Main
-_MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
+[ -z "$_AWK" -a -z "$_ONLYIP" ] && _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
 
 # Query duckduckgo.com for "ip address"
-_MYECHO "WebQuery"
+[ -z "$_AWK" -a -z "$_ONLYIP" ] && _MYECHO "WebQuery"
 _WEBRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address")
-[ "$?" = 0 ] && _OK || { _KO ":Data not received correctly"; exit 1; }
+if [ "$?" = 0 ]; then
+  [ -z "$_AWK" -a -z "$_ONLYIP" ] && _OK
+else
+  [ -z "$_AWK" -a -z "$_ONLYIP" ] && _KO ":Data not received correctly"
+  exit 1
+fi
 
-_TMPRESULT=$(echo "$_WEBRESULT" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/; s/\\u00e9/é/; s/\\u00e8/è/; s/\\u00ea/ê/; s/\\u00e0/à/')
+# cleanup result
+_TMPRESULT=$(echo $_WEBRESULT | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/; s/\\u00e9/é/; s/\\u00e8/è/; s/\\u00ea/ê/; s/\\u00e0/à/')
 
-
+if [ ! -z "$_AWK" ]; then
+  echo "########## IP DuckDuck Geoloc ### $_VERS ##########"
+  echo "$_TMPRESULT" |awk '{print "# IP: " $1"\n# City: " $3"\n# ZipCode: " $NF"\n# Province: " $4"\n# Country: " $(NF-1)}' |sed 's/,//'
+  exit 0
+fi
 
 # Set Vars for proper display
 if [ $(echo "$_TMPRESULT" |wc -w) -le 4 ]; then 
 _IP=$(echo "$_TMPRESULT" |awk '{print $1}')
-_COUNTRY=$(echo "$_TMPRESULT" |awk -F', | ' '{print $(NF)}')
+_COUNTRY=$(echo "$_TMPRESULT" |awk '{print $NF}')
 else
 _IP=$(echo "$_TMPRESULT" |awk '{print $1}')
 _ZIPCODE=$(echo "$_TMPRESULT" |awk '{print $NF}')
 _CITY=$(echo "$_TMPRESULT" |awk -F' in |, ' '{print $2}')
 _PROVINCE=$(echo "$_TMPRESULT" |awk -F', ' '{print $2}')
-_COUNTRY=$(echo "$_TMPRESULT" |awk -F', | ' '{print $(NF-1)}')
+_COUNTRY=$(echo "$_TMPRESULT" |awk '{print $(NF-1)}')
 fi
 
 # If only IP is requested, show it and exit
@@ -76,11 +90,6 @@ if [[ $_ONLYIP -eq 1 ]]; then
   echo $_IP
   exit 0
 fi
-
-_AWKRESULT () {
-  #echo "########## IP DuckDuck Geoloc ### $_VERS ##########"
-  echo "$_TMPRESULT" |awk '{print "# IP: " $1"\n# City: " $3"\n# ZipCode: " $NF"\n# Province: " $4"\n# Country: " $(NF-1)}' |sed 's/,//'
-}
 
 _MYRESULT () {
 if [ -z "$_ZIPCODE" ]; then
@@ -96,6 +105,5 @@ fi
 }
 
 # Show results
-if [[ $_AWK -eq 1 ]]; then _AWKRESULT; exit 0; fi
 if ! type _MYECHO >/dev/null 2>&1; then _AWKRESULT; else _MYRESULT; fi
 
