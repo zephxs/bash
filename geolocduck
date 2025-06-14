@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Simple script to get current Wan IP + Geolocation from Duckduckgo
+### v1.5 - 2 step URL parse due to awk error on certain string
 ### v1.4 - adapt to DuckDuck Answer Country only in certain conditions
 ### v1.3 - removed temp file and awk correction
 ### v1.2 - Added option to get only Wan IP (-o) and awk output (-a) if specified
@@ -49,10 +50,14 @@ fi
 ### Main
 _MYECHO -t "IP DuckDuck Geoloc ### $_VERS"
 
-# Query duckduckgo.com for "ip address" terms
+# Query duckduckgo.com for "ip address"
 _MYECHO "WebQuery"
-_TMPRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/; s/\\u00e9/é/; s/\\u00e8/è/; s/\\u00ea/ê/; s/\\u00e0/à/')
+_WEBRESULT=$(curl -s "https://duckduckgo.com/?q=ip+address")
 [ "$?" = 0 ] && _OK || { _KO ":Data not received correctly"; exit 1; }
+
+_TMPRESULT=$(echo "$_WEBRESULT" | awk -F'Your IP address is |</a>","AnswerType":"ip"' '{print $2}' | sed -r 's/<a href.*>//; s/\)//; s/\(//; s/\\u00f4/ô/; s/\\u00e9/é/; s/\\u00e8/è/; s/\\u00ea/ê/; s/\\u00e0/à/')
+
+
 
 # Set Vars for proper display
 if [ $(echo "$_TMPRESULT" |wc -w) -le 4 ]; then 
