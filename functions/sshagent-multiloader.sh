@@ -1,6 +1,7 @@
 #!/bin/bash
 
 sshagent-loader () {
+### v2.1 - Added escape for each keys
 ### v2.0 - Local ssh multi session agent 
 # added scan .ssh folder and load multiple keys at once
 # set fixed agent socket and default key to load
@@ -8,7 +9,7 @@ sshagent-loader () {
 # handle forwarded agent
 local _SETKEY="$HOME/.ssh/id_ed25519"        # set default keys to load
 local _TIME="28800"
-local _VERS='v2.0'
+local _VERS='v2.1'
 unset _SSHKARRAY
 unset _LOADEDKEYS
 
@@ -53,10 +54,19 @@ _PRELOADER(){
 _AGENTLOADER(){
 # load keys to agent
 for _MYSKEY in "${_SSHKARRAY[@]}"; do
-  _MYECHO -p "Loading Key= '$_MYSKEY'"
-  [ -z "$_TIME" ] && ssh-add -q "${_MYSKEY}" || ssh-add -q -t "$_TIME" "${_MYSKEY}"
+	echo "${_SSHKARRAY[@]}"  
+  _MYECHO -p "Loading Key= '$_MYSKEY'  [Y/n]"
+  read -sn1
+  echo
+  if [[ $REPLY =~ n|N ]]; then 
+    _LOADRESULT='0'  
+    #_SSHKARRAY=("${_SSHKARRAY[@]/$_MYSKEY}") 
+  else
+    [ -z "$_TIME" ] && ssh-add -q "${_MYSKEY}" || ssh-add -q -t "$_TIME" "${_MYSKEY}"
+    _SSHKARRAY=("${_SSHKARRAY[@]/$_MYSKEY}") 
+    [ -z "$_SSHKARRAY" ] && _LOADRESULT='0' || _LOADRESULT='1'  
+  fi
 done
-_SSHAGENTCHECK
 }
 
 ### Base checks and setup
@@ -92,8 +102,8 @@ _MYECHO "Test SSH Agent"
 [ "$_LOADRESULT" = 0 ] && _OK ':Running' || _KO
 _LOADEDKEYS=$(ssh-add -l |awk '{print $3}' |tr "\n" " ")
 _MYECHO "Loaded SSH keys" && _OK ":${_LOADEDKEYS}"
-_MYECHO -p "Load new Key ? [yN]"
-read -s -n1
+_MYECHO -p "Load new Key ? [Y/n]"
+read -sn1
 if [[ "$REPLY" =~ [Yy] ]]; then
   _KEYLOADER
   _AGENTLOADER
