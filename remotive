@@ -1,0 +1,138 @@
+#!/bin/bash
+### Get Remotiv Jobs from API
+# v0.2 - Add Params and vars
+# v0.1 - POC
+
+_COUNTRY="Europe"
+_CATEGORY=""
+_OUTJSON="$HOME/logs/remotive.json"
+# Colors and output (avail in the profile folder of this repo)
+type myecho >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
+
+# Usage
+_SCRIPTUSAGE(){
+_GRN "Params:"
+echo "  -s|--search    # Search Globally"
+echo "  -t|--tag       # Search between Tags"
+echo "  -c|--country   # Work location"
+_BLU "ex: \"$(basename $0) -s linux\"     # Web Search [Global]"
+_BLU "or: \"$(basename $0) -t linux\"     # Job Tags Search"
+echo -e "*** Server infos can be set in script variable to avoid input\n"
+_GRN "Modes:"
+echo "  -n|--nodl      # Do not Download JSON [need to be cached once]"
+echo "  -d|--desc      # Display Job Descriptions"
+_BLU "ex: \"$(basename $0) -t docker -n -d\""
+echo
+}
+
+while (( "$#" )); do
+  case "$1" in
+    -h|--help)
+      _SCRIPTUSAGE
+      exit 0
+      ;;
+    -n|--nodl)
+      _NODL='1'
+      shift
+      ;;
+    -d|--desc)
+      _DESC='1'
+      shift
+      ;;
+    -s|--search)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        _SEARCH="${2}"
+        shift 2;
+      else
+	echo "Search missing.. continue with all";
+	continue;
+      fi
+      ;;
+    -t|--tag)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        _TAG="${2}"
+        shift 2;
+      else
+	echo "Tag missing.. continue with all";
+	continue;
+      fi
+      ;;
+    -c|--country)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        _COUNTRY="${2}"
+        shift 2;
+      else
+	continue;
+      fi
+      ;;
+  esac
+done
+
+# Preset
+_COUNTRYSET(){
+while true; do
+  read -p "Input your working location (Country) : " _COUNTRY
+  echo
+  if [ -z "$_COUNTRY" ]; then
+    echo "You need to select a country.."
+  else
+    break
+  fi
+done
+}
+[ -z "$_COUNTRY" ] && _COUNTRYSET
+
+_CATEGORYSET(){
+  _MYECHO -p "Select a Job Type :"
+  _GETCATEGORY=$(curl -s 'https://remotive.com/api/remote-jobs/categories' |jq -r '.jobs[].slug')
+  select _CATEGORY in $_GETCATEGORY; do
+    if [ -n "$_CATEGORY" ]; then
+        break
+    else
+        echo "Invalid selection. Please try again."
+    fi
+  done
+}
+[ -z "$_CATEGORY" ] && _CATEGORYSET
+
+_JSONGET(){
+if [ -z "$_SEARCH" ]; then 
+_MYECHO -d "Get Json"
+curl -s "https://remotive.com/api/remote-jobs?category=${_CATEGORY}" >${_OUTJSON}
+else
+_MYECHO -d "Search" && echo "[$_SEARCH]"
+_MYECHO -d "Get Json"
+curl -s "https://remotive.com/api/remote-jobs?category=${_CATEGORY}&search=${_SEARCH}" >${_OUTJSON}
+fi
+[ $? = 0 ] && _OK || _KO
+}
+
+# Main
+_MYECHO -t "Remotive Jobs"
+_MYECHO -d "Type" && echo "[$_CATEGORY]"
+_MYECHO -d "Country" && echo "[$_COUNTRY]"
+[ -z "$_TAG" ] || { _MYECHO -d "Tag" && echo "[$_TAG]"; }
+
+if [ "$_NODL" = '1' ]; then
+  [ -s "$_OUTJSON" ] || { echo 'File not found or empty, download'; _JSONGET; }
+else
+  _JSONGET
+fi
+echo
+
+_MYECHO -l
+if [ -z "$_TAG" ]; then
+  if [ $_DESC = '1' ]; then
+  cat ${_OUTJSON} |jq --arg country $_COUNTRY '.jobs[] | select(.candidate_required_location | contains($country)) | { id, url, title, company_name, tags, description }'
+  else
+  cat ${_OUTJSON} |jq --arg country $_COUNTRY '.jobs[] | select(.candidate_required_location | contains($country)) | { id, url, title, company_name, tags }'
+  fi
+else
+  if [ $_DESC = '1' ]; then
+  cat ${_OUTJSON} |jq --arg country $_COUNTRY --arg tag $_TAG '.jobs[] | select(.candidate_required_location | contains($country)) | select(.tags | contains([$tag]))| { id, url, title, company_name, tags, description }'
+  else
+  cat ${_OUTJSON} |jq --arg country $_COUNTRY --arg tag $_TAG '.jobs[] | select(.candidate_required_location | contains($country)) | select(.tags | contains([$tag]))| { id, url, title, company_name, tags }'
+  fi
+fi
+_MYECHO -l
+
