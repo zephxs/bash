@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Get Remotive Jobs from API
+### https://remotive.com/remote-jobs/api
 # v0.3 - Added functionnalities
 # v0.2 - Params and Vars
 # v0.1 - POC
