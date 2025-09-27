@@ -7,7 +7,7 @@
 ### Json output file [check folder permissions]
 _OUTJSON="$HOME/logs/remotive.json"
 # Load MYECHO and colors [available in this repo in profile dir]
-type myecho >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
+type myecho >/dev/null 2>&1 || . ${PREFIX}/etc/profile.d/01-myecho-colors.sh
 # Stored needed params setted from first run
 [ -f "$HOME/.remotiverc" ] && . $HOME/.remotiverc
 
@@ -108,7 +108,7 @@ _MYECHO -t "Remotive Jobs"
 
 ### Functions
 _GET_CATEGORIES=$(curl -s 'https://remotive.com/api/remote-jobs/categories' |jq -r '.jobs[].slug')
-_GET_COUNTRIES=$(curl -s 'https://remotive.com/api/remote-jobs/categories' |jq -r '.jobs[]' |awk -F':' '/candidate_required_location/ {print $NF}' |sed 's/\"//g; s/\, /\n/g; s/ //g; s/,//g' | sort -u)
+_GET_COUNTRIES=$(curl -s 'https://remotive.com/api/remote-jobs' |jq '.jobs[]' |awk -F':' '/candidate_required_location/ {print $NF}' |sed 's/\"//g; s/\, /\n/g; s/ //g; s/,//g' | sort -u)
 
 _CATEGORYSET(){
 _MYECHO -p "Select a Job Type :"
