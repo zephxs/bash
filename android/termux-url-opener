@@ -3,7 +3,7 @@
 ### v2.4 - add Play option for launching VLC in Android
 ### v2.3 - move to pipx
 ### Replaced youtube-dl with yt-dlp for download speed
-### to be placed in user path ~/bin/ and chmod +x
+# to be placed in user path ~/bin/ and chmod +x
 
 ### REQUIREMENTS
 # Define your destination paths here :
@@ -17,23 +17,21 @@ _TMPFILE='/storage/emulated/0/tmpdl/%(title)s.%(ext)s'
 
 ### AUTO INSTALLER / UPDATER for Termux
 if type pkg >/dev/null ; then
-# required pipx for easy install and update under venv
+# required pipx
 type pipx >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
-# install yt-dlp and update if bin older than 15 days
-find $(type -P yt-dlp) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
-# install screen for backgrounding - can be removed with occurences if not needed
-type screen >/dev/null || ( echo "... Installing screen" && pkg install screen; )
+# install yt-dlp and update if folder than 15 days
+find $(realpath $(type -P yt-dlp)) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
 fi
 
 ### FUNCTIONS
 _MYECHO () { 
 # Nicer output
-_DOTNUM=20;
+_DOTNUM=24;
 if [ -z "$1" ]; then echo "<!> need argument"; return 1; fi
-_CHAINL=$(echo $@ | wc -c)
+_CHAINL=$(echo "$@" | wc -c)
 _DOTL=$((_DOTNUM - _CHAINL))
 i=0
-echo -e "$@\c"
+echo -e "${@}\c"
 while [ "$i" -lt "$_DOTL" ]; do echo -e ".\c"; i=$((i+1)); done
 return 0
 }
@@ -44,12 +42,12 @@ echo
 _BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp -n --list-formats "$_URL" | egrep -v "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
+select _FORMATIDLINE in $(yt-dlp -n --list-formats "$_URL" | grep -Ev "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
   _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
   _GRN "# Format = $_FORMATID"
   break
 done
-[ -z "$_FORMATID"] && ( _RED "> wrong format.." && exit 1; )
+[ -z "$_FORMATID" ] && ( _RED "> wrong format.." && exit 1; )
 }
 
 # Colorize
@@ -90,13 +88,13 @@ while true; do
 case "$REPLY" in
  1) _BLU "######################################"
   _BLU '# Video - Downloading..'
-  screen yt-dlp -n --restrict-filenames -o "${_VIDEOS}" ${_URL}
+  yt-dlp -n -t mp4 --restrict-filenames -o "${_VIDEOS}" ${_URL}
   break
   ;;
  2) _BLU "######################################"
   _BLU '# Video - Detecting Format..'
   _FORMATSELECT
-  screen yt-dlp -n --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
+  yt-dlp -n -t mp4 --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
   break
   ;;
  3) _BLU "######################################"
@@ -104,12 +102,12 @@ case "$REPLY" in
   read -p "Filename: " _ONAME
   _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
   _FORMATSELECT
-  screen yt-dlp -n --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
+  yt-dlp -n -t mp4 --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
   break
   ;;
  4) _BLU "######################################"
   _BLU '# AudioBook - Downloading..'
-  screen yt-dlp -n --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
+  yt-dlp -n --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
   break
   ;;
  p) _BLU "######################################"
@@ -135,7 +133,7 @@ case "$REPLY" in
   ;;
  *) _BLU "######################################"
   _BLU '# MP3 - Downloading..'
-  screen -S music yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
+  yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
   break
   ;;
 esac
