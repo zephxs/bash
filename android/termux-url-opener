@@ -1,9 +1,10 @@
-#!/bin/bash
-### Youtube and other streaming sites Downloader script
-### v2.4 - add Play option for launching VLC in Android
-### v2.3 - move to pipx
-### Replaced youtube-dl with yt-dlp for download speed
-# to be placed in user path ~/bin/ and chmod +x
+#!/data/data/com.termux/files/usr/bin/bash
+### Termux yt-dlp Android "Download With" script
+### v2.5 - Various path fixes
+### v2.4 - Add Play option for launching VLC in Android
+### v2.3 - Moved to pipx
+### v2.2 - Replaced youtube-dl with yt-dlp for download speed
+# to place in user path "~/bin/" and 'chmod +x'
 
 ### REQUIREMENTS
 # Define your destination paths here :
@@ -16,14 +17,36 @@ _TMPFILE='/storage/emulated/0/tmpdl/%(title)s.%(ext)s'
 [ -d "$(dirname $_VIDEOS)" -o -d "$(dirname $_ABOOKS)" -o -d "$(dirname $_ZIKS)" ] || { echo "# Destination Folders not found, exit" && exit 1; } 
 
 ### AUTO INSTALLER / UPDATER for Termux
+export PATH=/data/data/com.termux/files/home/bin:/data/data/com.termux/files/home/.local/bin:$PATH
+
 if type pkg >/dev/null ; then
-# required pipx
-type pipx >/dev/null || ( echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; )
-# install yt-dlp and update if folder than 15 days
-find $(realpath $(type -P yt-dlp)) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
+# required pipx for install and update under venv
+type pipx >/dev/null || { echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; }
+# install yt-dlp and update if bin older than 15 days
+_YDLPATH=$(type -P yt-dlp)
+find $(realpath $_YDLPATH) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
 fi
 
+# 1st arg will be used as youtube url
+clear
+_URL="$@"
+echo "$_URL - $(date)" >>$HOME/.yt-dlp.log
+grep -q "^http.*" <<< ${_URL} || exit 1
+
 ### FUNCTIONS
+# Colorize
+_REZ="\e[0m"
+_RDX="\e[1;31m"
+_BLX="\e[1;34m"
+_GRX="\e[1;32m"
+_MVX="\e[1;95m"
+_BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
+_RED () { echo -e "${_RDX}${@}${_REZ}" ; }
+_GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
+_MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
+_OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
+_KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
+
 _MYECHO () { 
 # Nicer output
 _DOTNUM=24;
@@ -50,26 +73,7 @@ done
 [ -z "$_FORMATID" ] && ( _RED "> wrong format.." && exit 1; )
 }
 
-# Colorize
-_REZ="\e[0m"
-_RDX="\e[1;31m"
-_BLX="\e[1;34m"
-_GRX="\e[1;32m"
-_MVX="\e[1;95m"
-_BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
-_RED () { echo -e "${_RDX}${@}${_REZ}" ; }
-_GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
-_MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
-_OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
-_KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
-
-
 ### MAIN
-# 1st arg will be used as youtube url
-clear
-_URL=$1
-grep -q "^http.*" <<< ${_URL} || exit 1
-echo "$_URL - $(date '+')" >>$HOME/.yt-dlp.log
 _MAV "######################################"
 _MAV "########### Youtube-DL v2.4 ##########"
 _MAV "######################################"
@@ -98,7 +102,7 @@ case "$REPLY" in
   break
   ;;
  3) _BLU "######################################"
-  _BLU '# Video - Choose Name..'
+  _BLU '# Video - Choose Name:'
   read -p "Filename: " _ONAME
   _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
   _FORMATSELECT
