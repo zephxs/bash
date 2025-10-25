@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 ### Termux yt-dlp Android "Download With" script
-### v2.5 - Various path fixes + removed .netrc
+### v2.5 - Various path fixes
 ### v2.4 - Add Play option for launching VLC in Android
 ### v2.3 - Moved to pipx
 ### v2.2 - Replaced youtube-dl with yt-dlp for download speed
@@ -8,8 +8,7 @@
 
 ### REQUIREMENTS
 # Define your destination paths here :
-_OUTVIDEOS='/data/data/com.termux/files/home/storage/shared/youtube'
-_VIDEOS="${_OUTVIDEOS}/%(title)s.%(ext)s"
+_VIDEOS='/data/data/com.termux/files/home/storage/shared/youtube/%(title)s.%(ext)s'
 _ABOOKS='/data/data/com.termux/files/home/storage/shared/Music/6-audiobooks/%(title)s.%(ext)s'
 _ZIKS='/data/data/com.termux/files/home/storage/shared/Music/5-Newz/%(title)s.%(ext)s'
 _TMPFOLDER='/storage/emulated/0/tmpdl/'
@@ -19,20 +18,22 @@ _TMPFILE='/storage/emulated/0/tmpdl/%(title)s.%(ext)s'
 
 ### AUTO INSTALLER / UPDATER for Termux
 export PATH=/data/data/com.termux/files/home/bin:/data/data/com.termux/files/home/.local/bin:$PATH
-
 if type pkg >/dev/null ; then
-# required pipx for install and update under venv
-type pipx >/dev/null || { echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; }
-# install yt-dlp and update if bin older than 15 days
-_YDLPATH=$(type -P yt-dlp)
-find $(realpath $_YDLPATH) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
+  # required pipx for install and update under venv
+  type pipx >/dev/null || { echo "... Installing pipx" && pkg install python3 && python3 -m pip install pipx; }
+  # install yt-dlp and update if bin older than 15 days
+  _YDLPATH=$(type -P yt-dlp)
+  find $(realpath $_YDLPATH) -mtime +15 -exec python3 -m pipx upgrade yt-dlp \; || python3 -m pipx install yt-dlp
 fi
 
 # 1st arg will be used as youtube url
 clear
-_URL="$@"
+_URL="$1"
 echo "$_URL - $(date)" >>$HOME/.yt-dlp.log
-grep -q "^http.*" <<< ${_URL} || exit 1
+if ! echo "$_URL" | grep -qE '^https?://'; then
+  echo "Invalid URL: $_URL" >> "$HOME/.yt-dlp.log"
+  exit 1
+fi
 
 ### FUNCTIONS
 # Colorize
@@ -66,12 +67,12 @@ echo
 _BLU "# Select Available Video Format:"
 local IFS="
 "
-select _FORMATIDLINE in $(yt-dlp --list-formats "$_URL" | grep -Ev "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
+select _FORMATIDLINE in $(yt-dlp -n --list-formats "$_URL" | grep -Ev "^ID|------|only|^\[|image" | awk '{print $1" "$2" "$3" "$7" "$NF}'); do
   _FORMATID=$(awk '{print $1}' <<<$_FORMATIDLINE)
   _GRN "# Format = $_FORMATID"
   break
 done
-[ -z "$_FORMATID" ] && ( _RED "> wrong format.." && exit 1; )
+[ -z "$_FORMATID" ] && { _RED 'Wrong Format..' && exit 1; }
 }
 
 ### MAIN
@@ -88,31 +89,31 @@ _MYECHO "[p] " && echo ' for Playing file with VLC'
 _MYECHO "[Enter] " && echo ' for Music'
 _MYECHO "[q] " && echo ' to quit'
 echo
-read -s -n 1 -r
+read -s -n 1 -r _REPLY < /dev/tty
 while true; do
-case "$REPLY" in
+case "$_REPLY" in
  1) _BLU "######################################"
   _BLU '# Video - Downloading..'
-  yt-dlp -t mp4 --restrict-filenames -o "${_VIDEOS}" ${_URL}
+  yt-dlp -n -t mp4 --restrict-filenames -o "${_VIDEOS}" "${_URL}"
   break
   ;;
  2) _BLU "######################################"
   _BLU '# Video - Detecting Format..'
   _FORMATSELECT
-  yt-dlp -t mp4 --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" ${_URL}
+  yt-dlp -n -t mp4 --restrict-filenames -f ${_FORMATID} -o "${_VIDEOS}" "${_URL}"
   break
   ;;
  3) _BLU "######################################"
   _BLU '# Video - Choose Name:'
   read -p "Filename: " _ONAME
-  _OVIDEOS="${_OUTVIDEOS}/${_ONAME}.%(ext)s"
+  _OVIDEOS="/data/data/com.termux/files/home/storage/shared/youtube/${_ONAME}.%(ext)s"
   _FORMATSELECT
-  yt-dlp -t mp4 --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" ${_URL}
+  yt-dlp -n -t mp4 --restrict-filenames -f ${_FORMATID} -o "${_OVIDEOS}" "${_URL}"
   break
   ;;
  4) _BLU "######################################"
   _BLU '# AudioBook - Downloading..'
-  yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" ${_URL}
+  yt-dlp -n --restrict-filenames -x --audio-format mp3 -o "${_ABOOKS}" "${_URL}"
   break
   ;;
  p) _BLU "######################################"
@@ -121,7 +122,7 @@ case "$REPLY" in
     rm -rf "${_TMPFOLDER}/*"
   fi
   _BLU '# Read and delete'
-  yt-dlp --restrict-filenames -o "${_TMPFILE}" ${_URL}
+  yt-dlp -n --restrict-filenames -o "${_TMPFILE}" "${_URL}"
   if [ "$(ls $_TMPFOLDER |wc -l)" = 1 ]; then
     _PLAYFILE=$(ls "$_TMPFOLDER")
     _BLU "# Playing $_PLAYFILE"
@@ -138,7 +139,7 @@ case "$REPLY" in
   ;;
  *) _BLU "######################################"
   _BLU '# MP3 - Downloading..'
-  yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ZIKS}" ${_URL}
+  yt-dlp --restrict-filenames -x --audio-format mp3 -o "${_ZIKS}" "${_URL}"
   break
   ;;
 esac
