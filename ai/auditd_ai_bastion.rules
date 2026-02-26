@@ -1,0 +1,65 @@
+## ─────────────────────────────────────────────────────────────────────────────
+## RÈGLES AUDITD – BASTION IA (utilisateur ai-codex / agents LLM)
+## 2026-02 – Logging exhaustif + alerte sur actions destructrices
+## /etc/audit/rules.d/99-ai-bastion.rules
+## ─────────────────────────────────────────────────────────────────────────────
+
+# 1. Identifier clairement l’utilisateur IA (remplace 1001 par le vrai UID si différent)
+#    → auid = audit user ID (celui qui s’est loggé via SSH)
+-D lock
+
+# ── Exécution de commandes (le plus important) ───────────────────────────────
+# Capture TOUTES les execve de l’utilisateur IA
+-a always,exit -F arch=b64 -S execve -F auid>=1000 -F auid!=unset -F auid=1001 -k ai_exec
+
+# Même chose en 32 bits si ton système est multi-arch (rare mais possible)
+-a always,exit -F arch=b32 -S execve -F auid>=1000 -F auid!=unset -F auid=1001 -k ai_exec
+
+# ── Actions sur fichiers sensibles / critiques ────────────────────────────────
+# Tentatives de modification de configurations SSH / sudo / cron / etc.
+-w /etc/ssh/        -p wa -k ai_ssh_config
+-w /etc/sudoers     -p wa -k ai_sudoers
+-w /etc/sudoers.d/  -p wa -k ai_sudoers
+-w /etc/crontab     -p wa -k ai_cron
+-w /etc/cron.d/     -p wa -k ai_cron
+-w /etc/passwd      -p wa -k ai_accounts
+-w /etc/shadow      -p wa -k ai_accounts
+-w /etc/group       -p wa -k ai_accounts
+
+# ── Opérations destructrices ou risquées ─────────────────────────────────────
+# chmod, fchmod, fchmodat → changement de permissions
+-a always,exit -F arch=b64 -S chmod,fchmod,fchmodat -F auid>=1000 -F auid!=unset -F auid=1001 -k ai_perm_mod
+
+# chown, fchown, etc. → changement de propriétaire
+-a always,exit -F arch=b64 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -F auid=1001 -k ai_ownership
+
+# suppressions / renommages / liens
+-a always,exit -F arch=b64 -S unlink,unlinkat,rename,renameat,renameat2 -F auid>=1000 -F auid!=unset -F auid=1001 -k ai_delete_rename
+
+# Ouverture en écriture de fichiers partout (très bavard → optionnel mais puissant)
+# -a always,exit -F arch=b64 -S open,openat,openat2 -F exit=-EACCES -F auid=1001 -k ai_access_denied
+# -a always,exit -F arch=b64 -S open,openat,openat2 -F a0&0100000 -F auid=1001 -k ai_write_open   # O_WRONLY | O_RDWR
+
+# ── Exécution de binaires sensibles ───────────────────────────────────────────
+# Tentative d’exécuter des outils dangereux même si blacklistés dans le wrapper
+-a always,exit -F arch=b64 -S execve -F exe=/bin/rm    -F auid=1001 -k ai_danger_rm
+-a always,exit -F arch=b64 -S execve -F exe=/bin/dd    -F auid=1001 -k ai_danger_dd
+-a always,exit -F arch=b64 -S execve -F exe=/usr/bin/curl -F auid=1001 -k ai_outbound
+-a always,exit -F arch=b64 -S execve -F exe=/usr/bin/wget -F auid=1001 -k ai_outbound
+-a always,exit -F arch=b64 -S execve -F exe=/bin/nc    -F auid=1001 -k ai_reverse_shell
+
+# ── Tentatives d’élévation de privilèges ──────────────────────────────────────
+-a always,exit -F arch=b64 -S setuid,setresuid,setreuid -F auid=1001 -k ai_priv_escal
+
+# ── Surveillance du répertoire home de l’IA (où les agents écrivent souvent) ──
+-w /home/ai-codex/     -p rwa -k ai_home
+-w /home/ai-codex/.ssh -p wa  -k ai_home_ssh   # surtout les clés
+
+# ── Règles de performance & exclusion de bruit ────────────────────────────────
+# Évite de logger les lectures massives (cat, less, grep sur /proc, /sys…)
+-a never,exit -F dir=/proc/ -F auid=1001
+-a never,exit -F dir=/sys/  -F auid=1001
+-a never,exit -F exe=/usr/bin/script -F auid=1001   # le script du wrapper lui-même
+
+# Verrouillage final (empêche modification des règles sans reboot ou root physique)
+-e 2
