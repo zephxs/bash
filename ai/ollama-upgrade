@@ -1,0 +1,44 @@
+#!/bin/bash
+##### Simple Ollama Upgrader
+### v0.2 - Upgrade Ollama Core
+### v0.1 - Update all installed models
+#
+
+# Preset
+type _BLU >/dev/null 2>&1 || . /etc/profile.d/01-myecho-colors.sh
+_CORE=''
+_MODELS=''
+_ALL=''
+
+# Choice
+while (( $# )); do
+  case $1 in
+    -m|--models) _MODELS=1; shift ;;
+    -a|--all) _CORE=1; _MODELS=1; shift ;;
+    -h|--help) echo "Usage:"
+      echo "  -m|--models   Ugrade Ollama Models  [Default]"
+      echo "  -a|--all      Ugrade Ollama Core and Models [Default]"
+      echo "  -h|--help     Show this help"
+      exit 0
+      ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+[ -z "$CORE" -o -z "$_MODELS" ] && _CORE=1
+
+if [ "$_CORE" = 1 ]; then
+  _MYECHO -t "Ollama Upgrade Core"
+  curl -fsSL https://ollama.com/install.sh | sh
+  echo
+fi
+
+if [ "$_MODELS" = 1 ]; then
+  _MYECHO -t "Ollama Upgrade All Models"
+  for _IMAGE in $(ollama list |awk '!/^NAME/ {print $1}'); do
+    _MYECHO -l
+    _MYECHO "Model:" && echo "$_IMAGE"
+    ollama pull $_IMAGE && { _MYECHO "Upgrade"; _OK; } || { _MYECHO "Upgrade"; _KO; }
+  done
+echo
+fi
