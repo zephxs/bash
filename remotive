@@ -108,10 +108,14 @@ done
 _MYECHO -t "Remotive Jobs"
 
 ### Functions
-_GET_CATEGORIES=$(curl -s 'https://remotive.com/api/remote-jobs/categories' |jq -r '.jobs[].slug')
-_GET_COUNTRIES=$(curl -s 'https://remotive.com/api/remote-jobs' |jq '.jobs[]' |awk -F':' '/candidate_required_location/ {print $NF}' |sed 's/\"//g; s/\, /\n/g; s/ //g; s/,//g' | sort -u)
+_FETCH_CATEGORIES(){ curl -s 'https://remotive.com/api/remote-jobs/categories' | jq -r '.jobs[].slug'; }
+_FETCH_COUNTRIES(){ curl -s 'https://remotive.com/api/remote-jobs?limit=100' | jq -r '.jobs[].candidate_required_location' | sed 's/, /\n/g' | sort -u; }
+# Lazy-loaded on demand
+_GET_CATEGORIES=""
+_GET_COUNTRIES=""
 
 _CATEGORYSET(){
+[ -z "$_GET_CATEGORIES" ] && _GET_CATEGORIES=$(_FETCH_CATEGORIES)
 _MYECHO -p "Select a Job Type :"
 select _CATEGORY in $_GET_CATEGORIES; do
   if [ -n "$_CATEGORY" ]; then
@@ -123,6 +127,8 @@ done
 }
 
 _COUNTRYSET(){
+[ -z "$_GET_COUNTRIES" ] && _GET_COUNTRIES=$(_FETCH_COUNTRIES)
+_MYECHO -p "Select a Country :"
 select _COUNTRY in $_GET_COUNTRIES; do
   if [ -n "$_COUNTRY" ]; then
     break
@@ -133,20 +139,19 @@ done
 }
 
 _JSONGET(){
-if [ -z "$_SEARCH" ]; then 
+if [ -z "$_SEARCH" ]; then
   _MYECHO -d "Json"
-  curl -s "https://remotive.com/api/remote-jobs?category=${_CATEGORY}" >${_OUTJSON}
+  curl -s -o "${_OUTJSON}" "https://remotive.com/api/remote-jobs?category=${_CATEGORY}" && _OK ":downloaded" || _KO
 else
   _MYECHO -d "Search" && echo "[$_SEARCH]"
   _MYECHO -d "Json"
-  curl -s "https://remotive.com/api/remote-jobs?category=${_CATEGORY}&search=${_SEARCH}" >${_OUTJSON}
+  curl -s -o "${_OUTJSON}" "https://remotive.com/api/remote-jobs?category=${_CATEGORY}&search=${_SEARCH}" && _OK ":downloaded" || _KO
 fi
-[ $? = 0 ] && _OK ":downloaded" || _KO
 }
 
 ### Main
 # Set Category [Mandatory to curl json]
-[ -z "$_CATEGORY" ] && _CATEGORYSET && echo "_CATEGORY=${_CATEGORY}" >>$HOME/.remotiverc
+[ -z "$_CATEGORY" ] && _CATEGORYSET && sed -i "s/^_CATEGORY=.*/_CATEGORY=${_CATEGORY}/" $HOME/.remotiverc 2>/dev/null || echo "_CATEGORY=${_CATEGORY}" >>$HOME/.remotiverc
 _MYECHO -d "Type" && echo "[$_CATEGORY]"
 
 # Get Json if needed [older than 1day]
@@ -161,7 +166,7 @@ else
 fi
 
 # Set Work location and tags
-[ -z "$_COUNTRY" ] && _COUNTRYSET && echo "_COUNTRY=${_COUNTRY}" >>$HOME/.remotiverc
+[ -z "$_COUNTRY" ] && _COUNTRYSET && sed -i "s/^_COUNTRY=.*/_COUNTRY=${_COUNTRY}/" $HOME/.remotiverc 2>/dev/null || echo "_COUNTRY=${_COUNTRY}" >>$HOME/.remotiverc
 _MYECHO -d "Country" && echo "[$_COUNTRY]"
 # Tags
 [ -z "$_TAG" ] || { _MYECHO -d "Tag" && echo "[$_TAG]"; }
@@ -176,34 +181,34 @@ if [ "$_GET_ALL_CAT" = '1' -o "$_LIST_COUNTRIES" = '1' -o "$_LIST_TAGS" = '1' -o
   fi
   if [ "$_GET_ALL_CAT" = '1' ]; then
     _MYECHO -t "Available Categories"
-    echo "$_GET_CATEGORIES" |column
+    [ -z "$_GET_CATEGORIES" ] && _GET_CATEGORIES=$(_FETCH_CATEGORIES)
+    echo "$_GET_CATEGORIES" | fmt -w 80
     echo
   fi
   if [ "$_LIST_COUNTRIES" = '1' ]; then  
     _MYECHO -t "Available Countries"
-    jq  '.jobs[]' "${_OUTJSON}" |awk -F':' '/candidate_required_location/ {print $NF}' |sed 's/\"//g; s/\, /\n/g; s/ //g; s/,//g' | sort -u |column
+    jq -r '.jobs[].candidate_required_location' "${_OUTJSON}" | sed 's/, /\n/g' | sort -u | fmt -w 80
     echo
   fi
   if [ "$_LIST_TAGS" = '1' ]; then  
     _MYECHO -t "Available Tags"
-    jq '.jobs[].tags[]' "${_OUTJSON}" |sort -u |column
+    jq -r '.jobs[].tags[]' "${_OUTJSON}" | sort -u | fmt -w 80
   fi
 exit 0
 fi
-
 # Jq Job Parser
 _MYECHO -l
 if [ -z "$_TAG" ]; then
   if [ "$_DESC" = '1' ]; then
-  jq --arg country $_COUNTRY '.jobs[] | select(.candidate_required_location | contains($country)) | { id, url, title, company_name, tags, candidate_required_location, description }' "${_OUTJSON}"
+  jq --arg country $_COUNTRY '.jobs[] | select(.candidate_required_location | test($country; "i")) | { id, url, title, company_name, tags, candidate_required_location, description }' "${_OUTJSON}"
   else
-  jq --arg country $_COUNTRY '.jobs[] | select(.candidate_required_location | contains($country)) | { id, url, title, company_name, tags, candidate_required_location }' "${_OUTJSON}"
+  jq --arg country $_COUNTRY '.jobs[] | select(.candidate_required_location | test($country; "i")) | { id, url, title, company_name, tags, candidate_required_location }' "${_OUTJSON}"
   fi
 else
   if [ "$_DESC" = '1' ]; then
-  jq --arg country $_COUNTRY --arg tag $_TAG '.jobs[] | select(.candidate_required_location | contains($country)) | select(.tags | contains([$tag]))| { id, url, title, company_name, tags, candidate_required_location, description }' "${_OUTJSON}"
+  jq --arg country $_COUNTRY --arg tag $_TAG '.jobs[] | select(.candidate_required_location | test($country; "i")) | select(.tags | map(ascii_downcase) | contains([$tag | ascii_downcase]))| { id, url, title, company_name, tags, candidate_required_location, description }' "${_OUTJSON}"
   else
-  jq --arg country $_COUNTRY --arg tag $_TAG '.jobs[] | select(.candidate_required_location | contains($country)) | select(.tags | contains([$tag]))| { id, url, title, company_name, tags, candidate_required_location }' "${_OUTJSON}"
+  jq --arg country $_COUNTRY --arg tag $_TAG '.jobs[] | select(.candidate_required_location | test($country; "i")) | select(.tags | map(ascii_downcase) | contains([$tag | ascii_downcase]))| { id, url, title, company_name, tags, candidate_required_location }' "${_OUTJSON}"
   fi
 fi
 _MYECHO -l
