@@ -28,9 +28,9 @@ _MYECHO "Scan '$HOME/.ssh/'" && _OK
 for _SSHKEY in $(find $HOME/.ssh/ -maxdepth 1 -type f |grep -Ev '.pub|ssh-agent|known|config|env|authorized'); do 
   echo "${_LOADEDKEYS}" | grep -q "$_SSHKEY" && continue
   ssh-keygen -l -f $_SSHKEY >/dev/null 2>&1 || continue
-  _MYECHO "Add Key= $_SSHKEY ? [Y/n]"
+  _MYECHO "Add Key= $_SSHKEY ? [y/N]"
   read -s -n 1
-  [ "$REPLY" = 'n' ] && _KO && continue
+  [[ "$REPLY" = [yY] ]] && _KO && continue
   _SSHKARRAY+=($_SSHKEY)
   _OK
 done
@@ -55,7 +55,7 @@ _AGENTLOADER(){
 # load keys to agent
 for _MYSKEY in "${_SSHKARRAY[@]}"; do
 	echo "${_SSHKARRAY[@]}"  
-  _MYECHO -p "Loading Key= '$_MYSKEY'  [Y/n]"
+  _MYECHO -p "Loading Key= '$_MYSKEY'  [y/N]"
   read -sn1
   echo
   if [[ $REPLY =~ n|N ]]; then 
@@ -152,17 +152,17 @@ for _PROCESSID in $(ps --no-header --user $(id -u) -F|grep -v grep|grep ssh-agen
   # stop if pid not numeric
   [[ "$_PROCESSID" =~ ^[0-9]+$ ]] || continue
   _RED "/!\ Check if PID match user ssh agent:"
-  ps -p $i -F
-  _RED "> kill PID $i ? [Y/n]"
+  ps -p $_PROCESSID -F
+  _RED "> kill PID $_PROCESSID ? [Y/n]"
   read -s -n1
   if [[ "$REPLY" =~ [Yy] ]]; then
-    kill -9 $i
+    kill -9 $_PROCESSID
   fi
 done
 # unset ssh vars
 rm -f $HOME/.ssh/.ssh-agent &>/dev/null
-unset $SSH_AUTH_SOCK
-unset $SSH_AGENT_PID
+unset SSH_AUTH_SOCK
+unset SSH_AGENT_PID
 fi
 echo
 }

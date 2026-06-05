@@ -6,14 +6,13 @@ _REPOROOTFIND () {
 ### 1.1 - function to search for all repositories to sync
 # will create ~/.reporoot file to base future sync on
 if [ ! -f "$HOME/.reporoot" ]; then 
-  cd $HOME
-  find /media/ $HOME/ -type d -name .git 2>/dev/null >$HOME/.reporoot
-  sed -i 's#/.git##g' $HOME/.reporoot
+  cd "$HOME"
+  find /media/ "$HOME/" -type d -name .git 2>/dev/null >"$HOME/.reporoot"
+  sed -i 's#/.git##g' "$HOME/.reporoot"
   _MYECHO -p "# Found repos:"
-  cat $HOME/.reporoot; echo
+  cat "$HOME/.reporoot"; echo
   read -p "# Edit repos that will sync? " -n 1 -r
-  [[ "$REPLY" =~ ^[Yy]$ ]] && vim $HOME/.reporoot
-  local _REPOROOT=$(cat $HOME/.reporoot)
+  [[ "$REPLY" =~ ^[Yy]$ ]] && vim "$HOME/.reporoot"
   echo
 fi
 }
@@ -22,20 +21,20 @@ pullup () {
 ### Pull all repos and branches at once
 ### v1.4 - add quiet mode
 local _VERS='v1.4'
-[ -f "$HOME/.reporoot" ] && local _REPOROOT=$(cat $HOME/.reporoot) || _REPOROOTFIND
+[ -f "$HOME/.reporoot" ] || _REPOROOTFIND
 if [ "$1" != "-q" ]; then
 _MYECHO -l
 _MYECHO -t "Git - Pull all Repos ### $_VERS"
 echo
 fi
 
-for _REP in $_REPOROOT; do
+while IFS= read -r _REP; do
 if [ "$1" != "-q" ]; then
 _MYECHO -l
 _MYECHO -p "### Repo = $_REP"
 fi
- cd $_REP || continue
- for _BRANCH in $(git branch --list |sed 's/ //g; s/*//'); do
+ cd "$_REP" || continue
+ while IFS= read -r _BRANCH; do
   # Swap comment on the 2 next lines to suit your needs
   if [ "$1" != "-q" ]; then
   git switch "$_BRANCH"
@@ -45,9 +44,9 @@ fi
   git switch "$_BRANCH" >/dev/null 2>&1
   git pull >/dev/null 2>&1
   fi
-  #git merge --ff-only $_BRANCH && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
- done
-done
+  #git merge --ff-only "$_BRANCH" && _OK ":\"$_BRANCH\" branch pull success" || _KO ":\"$_BRANCH\" branch pull failed"
+ done < <(git branch --format='%(refname:short)')
+done < "$HOME/.reporoot"
 }
 
 repsync () {
@@ -62,19 +61,20 @@ if grep -qw "$_BAKREP$" "$HOME/.reporoot"; then
 else 
   echo "Backup Repo not found.. exiting!" && return 1
 fi
-local _SYNCREPOS=$(cat $HOME/.reporoot | grep -v $_DESTREPO)
 _MYECHO -l
 _MYECHO -t "Git - Repos Sync"
 [ -z "$_DESTREPO" ] && echo "Destination Repository not set.. exiting!" && return 1
-[ -z "$_SYNCREPOS" ] && echo "Source Repository not set.. exiting!" && return 1
-for _DIR in $_SYNCREPOS; do
- rsync -rqav --delete ${_DIR}/ ${_DESTREPO}/$(basename ${_DIR})/
- cd ${_DESTREPO}/$(basename ${_DIR})
+
+while IFS= read -r _DIR; do
+ [[ "$_DIR" == "$_DESTREPO" ]] && continue
+ rsync -rqav --delete "${_DIR}/" "${_DESTREPO}/$(basename "${_DIR}")/"
+ cd "${_DESTREPO}/$(basename "${_DIR}")" || continue
  rm -rf .git README.md LICENSE
-done
-cd ${_DESTREPO}
+done < "$HOME/.reporoot"
+
+cd "$_DESTREPO" || return 1
 git add -A
-if [ -z "_ORIGREP" ]; then
+if [ -z "$_ORIGREP" ]; then
 git commit -m "#Sync=$(date +"%H:%M-%d.%m.%Y")"
 else
 git commit -m "#Repo=$_ORIGREP #Sync=$(date +"%H:%M-%d.%m.%Y") #Msg=$_COMMITMSG"
@@ -88,7 +88,7 @@ local _COMMITMSG=$@
 # Backup repo set to avoid repo sync on the backup repo
 local _BAKREP='rep'
 [ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
-local _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |uniq |sed 's/.git//')
+local _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |sed 's/\.git$//')
 _MYECHO -l
 _MYECHO -t "Git - Commit and Sync"
 _MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"

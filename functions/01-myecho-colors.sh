@@ -113,7 +113,7 @@ done
 
 # Color settings
 [ -z "$_COLORCHOICE" ] && _COLORCHOICE='blue'
-if [ ! -z "$_COLORCHOICE" ]; then 
+if [ -n "$_COLORCHOICE" ]; then 
   case "${_COLORCHOICE}" in
     w*|white) local _COLOR="${_WHT}";;
     b*|blue) local _COLOR="${_BLX}";;
@@ -129,7 +129,7 @@ fi
 # Set end of dot line @ 3/5 of line lengh
 local _LINEHALF=$((_LINELENGH/5*3))
 # Get char num
-local _CHAINL=$(echo "${_MSG}" | wc -c)
+local _CHAINL=${#_MSG}
 
 case "${_TAG}" in
   'blank')
