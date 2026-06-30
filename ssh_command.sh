@@ -305,7 +305,7 @@ wait_for_all_jobs(){
 
 #### Options ################
 
-if [[ "$1" =~ ^((-{1,2})([Hh]$|[Hh][Ee][Ll][Pp])|)$ ]]; then
+if [[ -z "$1" || "$1" =~ ^-{1,2}([Hh]|[Hh][Ee][Ll][Pp])$ ]]; then
   display_help 0
   exit 1
 else
