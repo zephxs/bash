@@ -83,18 +83,79 @@ git push
 }
 
 gitp () {
-### v1.5 - add push and sync to back repo with : gitp "my comment"
-local _COMMITMSG=$@
-# Backup repo set to avoid repo sync on the backup repo
-local _BAKREP='rep'
-[ -z "$_COMMITMSG" ] && { echo "Commit message missing" && return 1; }
-local _ORIGREP=$(git remote get-url origin --push |awk -F'/' '{print $NF}' |sed 's/\.git$//')
+## git commit, tag, and push AOI
+## v2.1
+# Usage:
+#   gitp "fix landing anim"
+#   gitp -m "fix landing anim"
+#   gitp -m "fix landing anim" -v v2.4.1
+#   gitp -m "fix landing anim" -v v2.4.1 -b mybackup
+#   gitp -h
+#
+# Options:
+#   -m, --message MSG   Commit message (required)
+#   -v, --version TAG   Create annotated tag TAG and push it (optional)
+#   -b, --backup NAME   Backup repo name; if set and differs from origin, run repsync
+#   -h, --help          Show this help
+
+local _COMMITMSG='' _VERSION='' _BAKREP='' _ORIGREP=''
+
+# Single positional arg = commit message shortcut (only when not a flag).
+if [ $# = 1 ] && [[ "$1" != -* ]]; then
+  _COMMITMSG="$1"
+else
+  while (( $# )); do
+    case $1 in
+      -m|--message)
+        [ $# -ge 2 ] || { echo "gitp: $1 requires an argument"; return 1; }
+        _COMMITMSG="$2"; shift 2 ;;
+      -v|--version)
+        [ $# -ge 2 ] || { echo "gitp: $1 requires an argument"; return 1; }
+        _VERSION="$2"; shift 2 ;;
+      -b|--backup)
+        [ $# -ge 2 ] || { echo "gitp: $1 requires an argument"; return 1; }
+        _BAKREP="$2"; shift 2 ;;
+      -h|--help)
+        echo "Usage: gitp [-m MSG] [-v TAG] [-b BACKUP]"
+        echo "  -m, --message MSG   Commit message (required)"
+        echo "  -v, --version TAG   Create + push annotated tag (optional)"
+        echo "  -b, --backup NAME   Backup repo name; runs repsync if differs from origin"
+        echo "  -h, --help          Show this help"
+        return 2 ;;
+      -*)
+        echo "gitp: Unknown option: $1"; return 1 ;;
+      *)
+        echo "gitp: Unexpected argument: $1"; return 1 ;;
+    esac
+  done
+fi
+
+[ -z "$_COMMITMSG" ] && { echo "gitp: Commit message missing"; return 1; }
+
+_ORIGREP=$(git remote get-url origin --push 2>/dev/null | awk -F'/' '{print $NF}' | sed 's/\.git$//')
+[ -z "$_ORIGREP" ] && { echo "gitp: No 'origin' remote found"; return 1; }
+
 _MYECHO -l
 _MYECHO -t "Git - Commit and Sync"
-_MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
-git add -A
-git commit -m "$_COMMITMSG"
-git push
-[ "$_ORIGREP" = "$_BAKREP" ] || repsync
-}
 
+# Stage + commit; bail out if either fails (e.g. nothing to commit, hook fails).
+git add -A || { echo "gitp: git add failed"; return 1; }
+if [ -z "$_VERSION" ]; then
+  _MYECHO -p "# Repo= $_ORIGREP  # Comment= $_COMMITMSG"
+  git commit -m "$_COMMITMSG" || { echo "gitp: git commit failed"; return 1; }
+  git push || { echo "gitp: git push failed"; return 1; }
+else
+  _MYECHO -p "# Repo= $_ORIGREP  # Comment= $_VERSION:$_COMMITMSG"
+  git commit -m "$_VERSION: $_COMMITMSG" || { echo "gitp: git commit failed"; return 1; }
+  # Create tag only after commit succeeds.
+  git tag -a "$_VERSION" -m "$_VERSION: $_COMMITMSG" || { echo "gitp: git tag failed"; return 1; }
+  # Push commits first; only push tags if that succeeds.
+  git push || { echo "gitp: git push failed (tag '$_VERSION' left local)"; return 1; }
+  git push --tags || { echo "gitp: git push --tags failed"; return 1; }
+fi
+
+# Sync to backup repo if one was given and it differs from origin.
+if [ -n "$_BAKREP" ]; then
+  [ "$_ORIGREP" = "$_BAKREP" ] || repsync
+fi
+}
