@@ -16,6 +16,15 @@ _WHT () { echo -e "${_REZ}${@}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
 
+# Get terminal column count: COLUMNS -> stty size </dev/tty -> 80
+get_cols () {
+  local c
+  c=${COLUMNS:-0}
+  [ "${c:-0}" -gt 0 ] 2>/dev/null || c=$(( stty size </dev/tty ) 2>/dev/null | awk '{print $2}')
+  [ -n "${c:-}" ] && [ "${c:-0}" -gt 0 ] 2>/dev/null || c=80
+  echo "$c"
+}
+
 
 _MYECHO () {
 ##### Generate Formatted Output
@@ -25,20 +34,20 @@ _MYECHO () {
 local _TAG=''
 local _MSG=''
 
-# Length settings: write .myechorc with 2/3 screen lengh by default or "56" if $COLUMNS not set
+# Length settings: read .myechorc if present, else use get_cols()/2 (fallback 80/2=40 -> 56 min)
 if [ -f "$HOME/.myechorc" ]; then
   source $HOME/.myechorc
 fi
 
+local _COLS
+_COLS=$(get_cols)
+
 if [ -z "$_LINELENGH" ]; then
-  if [ -n "$COLUMNS" ]; then
-    echo "_LINELENGH=$((COLUMNS/2))" >$HOME/.myechorc
-  else
-    echo "_LINELENGH=56" >$HOME/.myechorc
-  fi
+  _LINELENGH=$((_COLS/2))
+  [ "$_LINELENGH" -ge 56 ] 2>/dev/null || _LINELENGH=56
 else
-  if [ -n "$COLUMNS" ] && [ "$_LINELENGH" -gt "$COLUMNS" ]; then
-    _LINELENGH=$((COLUMNS/2))
+  if [ "$_LINELENGH" -gt "$_COLS" ]; then
+    _LINELENGH=$((_COLS/2))
   fi
 fi
 
@@ -133,7 +142,7 @@ local _CHAINL=${#_MSG}
 
 case "${_TAG}" in
   'blank')
-    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
     local _CHAINLENGH=$((_CHAINL + 2))
     local _LINE=$((_LINEHALF - _CHAINLENGH))
     echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
@@ -145,7 +154,7 @@ case "${_TAG}" in
     return 0
     ;;
   'dot')
-    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
     local _CHAINLENGH=$((_CHAINL + 2))
     local _LINE=$((_LINEHALF - _CHAINLENGH))
     echo -e "${_COLOR}#${_REZ} ${_MSG} \c"
@@ -157,7 +166,7 @@ case "${_TAG}" in
     return 0
     ;;
   'equal')
-    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
     local _CHAINLENGH=$((_CHAINL + 3))
     local _LINE=$((_LINEHALF - _CHAINLENGH));
     echo -e "${_COLOR}#${_REZ} ${_MSG}\c";
@@ -170,11 +179,14 @@ case "${_TAG}" in
     return 0
     ;;
   'title')
-    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
+    # Auto-grow (strategie A): si le message depasse la ligne, elargir localement pour garder des # de chaque cote
+    local _TL=$_LINELENGH
+    [ "${_CHAINL}" -ge "$_TL" ] && _TL=$((_CHAINL + 6))
     local _CHAINLENGH=$((_CHAINL + 1))
-    local _HTL=$((_LINELENGH - _CHAINLENGH))
+    local _HTL=$((_TL - _CHAINLENGH))
     local _HTL2=$((_HTL /2))
-    local _HTL3=$((_LINELENGH - _CHAINLENGH - _HTL2))
+    local _HTL3=$((_TL - _CHAINLENGH - _HTL2))
     local _NVALUE=0
     while [ "$_NVALUE" -lt "$_HTL2" ]; do
       echo -e "${_COLOR}#${_REZ}\c"
@@ -200,11 +212,11 @@ case "${_TAG}" in
     return 0
     ;;
   'print')
-    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
     echo -e "${_COLOR}${_MSG}${_REZ}"
     ;;
   'start')
-    [ -z "$_MSG" ] && { echo "Message missing.."; return; }
+    [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
     echo -e "${_COLOR}#${_REZ} ${_MSG}"
     ;;
 esac
