@@ -6,12 +6,14 @@ export _BLX='\e[1;34m'
 export _GRX='\e[1;32m'
 export _MVX='\e[1;95m'
 export _ORX='\e[38;5;208m'
+export _YLX='\e[1;33m'
 _BLINK () { echo -e "${_BLK}${@}${_REZ}" ; }
 _BLU () { echo -e "${_BLX}${@}${_REZ}" ; }
 _RED () { echo -e "${_RDX}${@}${_REZ}" ; }
 _GRN () { echo -e "${_GRX}${@}${_REZ}" ; }
 _MAV () { echo -e "${_MVX}${@}${_REZ}" ; }
 _ORA () { echo -e "${_ORX}${@}${_REZ}" ; }
+_YEL () { echo -e "${_YLX}${@}${_REZ}" ; }
 _WHT () { echo -e "${_REZ}${@}" ; }
 _OK () { echo -e "[${_GRX}OK${_REZ}${@}]" ; }
 _KO () { echo -e "[${_RDX}KO${_REZ}${@}]" ; }
@@ -65,6 +67,9 @@ echo
 echo -e "	-p|--print 	= Colorize Text and return"
 echo -e "${_BLX}[test text !]${_REZ}"
 echo
+echo -e "	-m|--menu 	= Interactive menu (comma-separated options)"
+echo -e "${_ORX}#${_REZ} ${_YLX}> opt1 ${_ORX}        #${_REZ}   (↑↓ navigate, Enter select)"
+echo
 echo -e "	-s|--start 	= Start with colorized hashtag, Text and return"
 echo -e "${_BLX}#${_REZ}[test text !]"
 echo
@@ -112,6 +117,15 @@ while (( "$#" )); do
   -b|--blank) local _TAG='blank'; shift 1 ;;
   -s|--start) local _TAG='start'; shift 1 ;;
   -p|--print) local _TAG='print'; shift 1 ;;
+  -m|--menu)
+    if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+      _MENUOPTS="$2"
+      local _TAG='menu'
+      shift 2
+    else
+      echo "Menu options missing.."; return 3
+    fi
+    ;;
   -h|--help) _MYECHO_USAGE; return 1 ;;
   *) local _MSG="${_MSG}${1}"; shift ;;
   esac
@@ -214,6 +228,68 @@ case "${_TAG}" in
   'print')
     [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
     echo -e "${_COLOR}${_MSG}${_REZ}"
+    ;;
+  'menu')
+    [ -z "$_MENUOPTS" ] && { echo "Menu options missing.."; return 3; }
+    # Parse comma-separated options into array
+    local _OPTS=()
+    local _REST="$_MENUOPTS"
+    while [ -n "$_REST" ]; do
+      local _ITEM="${_REST%%,*}"
+      _OPTS+=("$_ITEM")
+      [ "$_REST" = "$_ITEM" ] && _REST='' || _REST="${_REST#*,}"
+    done
+    [ ${#_OPTS[@]} -eq 0 ] && { echo "Menu options missing.."; return 3; }
+    local _SEL=0 _KEY='' _SEQ=''
+    # Compute inner width from longest option
+    local _MAXW=0 _I=0
+    while [ "$_I" -lt ${#_OPTS[@]} ]; do
+      ((${#_OPTS[$_I]} > _MAXW)) && _MAXW=${#_OPTS[$_I]}
+      _I=$((_I+1))
+    done
+    # Lines per frame: 2 borders + N options + 1 help line
+    local _MENULINES=$(( ${#_OPTS[@]} + 3 ))
+    local _FIRST=1
+    _MENU_TTY='/dev/tty'
+    _MENU_BORDER () {
+      local _N=0
+      while [ "$_N" -lt "$_LINELENGH" ]; do
+        printf "${_COLOR}#${_REZ}" > "$_MENU_TTY"
+        _N=$((_N+1))
+      done
+      printf '\n' > "$_MENU_TTY"
+    }
+    _MENU_DRAW () {
+      # Erase previous frame: cursor up N lines + clear to end of screen (no inline save/restore)
+      if [ -z "$_FIRST" ]; then
+        printf '\033[%dA\033[J' "$_MENULINES" > "$_MENU_TTY"
+      fi
+      _FIRST=''
+      _MENU_BORDER
+      local _I=0
+      while [ "$_I" -lt ${#_OPTS[@]} ]; do
+        if [ "$_I" -eq "$_SEL" ]; then
+          printf "${_COLOR}#${_REZ} ${_YLX}> %-${_MAXW}s \n" "${_OPTS[$_I]}" > "$_MENU_TTY"
+        else
+          printf "${_COLOR}#${_REZ}   ${_ORX}%-${_MAXW}s \n" "${_OPTS[$_I]}" > "$_MENU_TTY"
+        fi
+        _I=$((_I+1))
+      done
+      _MENU_BORDER
+      printf "${_COLOR}# ${_REZ}${_COLOR}↑↓ naviguer • Enter valider • Esc annuler${_REZ}\n" > "$_MENU_TTY"
+    }
+    while true; do
+      _MENU_DRAW
+      read -rsn1 _KEY < "$_MENU_TTY"
+      _SEQ=''
+      [ "$_KEY" = $'\e' ] && { read -rsn2 _SEQ 2>/dev/null < "$_MENU_TTY"; _KEY+="$_SEQ"; }
+      case "$_KEY" in
+        $'\e[A') ((_SEL > 0)) && _SEL=$((_SEL-1)) ;;
+        $'\e[B') ((_SEL < ${#_OPTS[@]}-1)) && _SEL=$((_SEL+1)) ;;
+        '')   printf '\033[%dA\033[J' "$_MENULINES" > "$_MENU_TTY"; echo "${_OPTS[$_SEL]}"; return 0 ;;
+        $'\e'|q) printf '\033[%dA\033[J' "$_MENULINES" > "$_MENU_TTY"; echo "Annulé" > "$_MENU_TTY"; return 1 ;;
+      esac
+    done
     ;;
   'start')
     [ -z "$_MSG" ] && { echo "Message missing.."; return 3; }
