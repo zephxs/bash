@@ -1,0 +1,9 @@
+nvme list -o json | jq -r '
+  if (.Devices[0] | has("DevicePath")) then
+    .Devices[] | "/dev/\(.DevicePath | ltrimstr("/dev/"))  nsid=\(.NameSpace)"
+  else
+    .Devices[]? | .Subsystems[]? | .Controllers[]? | . as $c
+    | .Namespaces[]?
+    | "/dev/\(.NameSpace)  ctrl=\($c.Controller)  nsid=\(.NSID)"
+  end
+'
