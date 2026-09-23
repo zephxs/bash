@@ -58,13 +58,13 @@ for _MYSKEY in "${_SSHKARRAY[@]}"; do
   _MYECHO -p "Loading Key= '$_MYSKEY'  [y/N]"
   read -sn1
   echo
-  if [[ $REPLY =~ n|N ]]; then 
-    _LOADRESULT='0'  
-    #_SSHKARRAY=("${_SSHKARRAY[@]/$_MYSKEY}") 
-  else
+  if [[ $REPLY =~ [yY] ]]; then 
     [ -z "$_TIME" ] && ssh-add -q "${_MYSKEY}" || ssh-add -q -t "$_TIME" "${_MYSKEY}"
     _SSHKARRAY=("${_SSHKARRAY[@]/$_MYSKEY}") 
     [ -z "$_SSHKARRAY" ] && _LOADRESULT='0' || _LOADRESULT='1'  
+  else
+    _LOADRESULT='0'  
+    #_SSHKARRAY=("${_SSHKARRAY[@]/$_MYSKEY}") 
   fi
 done
 }
@@ -102,7 +102,7 @@ _MYECHO "Test SSH Agent"
 [ "$_LOADRESULT" = 0 ] && _OK ':Running' || _KO
 _LOADEDKEYS=$(ssh-add -l |awk '{print $3}' |tr "\n" " ")
 _MYECHO "Loaded SSH keys" && _OK ":${_LOADEDKEYS}"
-_MYECHO -p "Load new Key ? [Y/n]"
+_MYECHO -p "Load new Key ? [y/N]"
 read -sn1
 if [[ "$REPLY" =~ [Yy] ]]; then
   _KEYLOADER
