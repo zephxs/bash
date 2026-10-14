@@ -4,6 +4,12 @@
 > en s'assurant qu'il est **passif** (drain complet) avant l'upgrade.
 >
 > ⚠️ Corrigé par rapport à la première version : coquille dans la boucle d'attente du script shell (ligne parasite `ctdb log ...`), remplacée par un `done` propre.
+>
+> ⚠️ **Revue V2** — bugs critiques corrigés : assert precheck inversée, comptage VIP
+> no-op (pnn comparé à une IP), `command` + `&&` (pas de shell), détection reboot
+> toujours "no". Ajouts : contrôle des peers **avant** `ctdb enable`, parsing ctdb
+> robuste (marqueur `THIS NODE`), `drain_timeout` réellement utilisé, garde-fou
+> concurrency AWX.
 
 ---
 
@@ -76,9 +82,10 @@ Deux sous-commandes pour être utilisable dans une runbook manuelle :
 #                                 3. attente de la fin des connexions NFS
 #                                 4. STOPpe les services NFS locaux
 #   ./ctdb-upgrade.sh resume   -> après l'upgrade/reboot :
-#                                 1. redémarre les services NFS
-#                                 2. ctdb enable (takeover des VIP possibles)
-#                                 3. vérifie l'état du cluster + test montage
+#                                 1. contrôle que les peers sont sains
+#                                 2. redémarre les services NFS
+#                                 3. ctdb enable (takeover des VIP possibles)
+#                                 4. vérifie l'état du cluster + test montage
 #
 # NE lance PAS l'upgrade lui-même : il prépare / restaure l'environnement.
 # Dépendances : ctdb, ss, awk. Optionnel : showmount, rpcinfo.
@@ -104,9 +111,10 @@ die()  { log "ERREUR: $*"; exit 1; }
 # Numéro du nœud CTDB local
 get_self_node() {
     [ -x "$CTDB_BIN" ] || die "$CTDB_BIN introuvable"
-    line="$("$CTDB_BIN" -n all status | grep "$(hostname -I | awk '{print $1}')" | head -1)"
-    node="$(echo "$line" | awk '{sub(":","",$1); print $1}')"
-    [ -n "$node" ] || die "impossible de résoudre le numéro de nœud ctdb local"
+    # Marqueur THIS NODE : stable quel que soit le format de sortie de ctdb
+    # (pnn:0 ou 0:), sans dépendre de l'ordre des IP de hostname -I.
+    node="$($CTDB_BIN nodestatus | grep 'THIS NODE' | awk '{sub(":","",$1); print $1}')"
+    [ -n "$node" ] || die "impossible de résoudre le nœud local (pas de marqueur THIS NODE)"
     echo "$node"
 }
 
@@ -118,8 +126,10 @@ get_other_nodes() {
 
 # VIP actuellement portées par le nœud local
 local_vip_count() {
+    # $NF est le pnn du porteur : "0", "pnn:0" ou "node[0]" selon la version
     "$CTDB_BIN" ip | awk -v self="$SELF_NODE" \
-        '{ n = $NF; sub(":","",n); if (n == self) c++ } END { print c+0 }'
+        '{ n = $NF; sub(":","",n); sub(/^node\[/,"",n); sub(/\]$/,"",n);
+           if (n == self) c++ } END { print c+0 }'
 }
 
 # Clients NFS kernel actifs sur CE nœud (kernel >= 5.3)
@@ -143,10 +153,13 @@ nfs_v3_locks_count() {
 # ---------------------------------------------------------------- sub-commandes
 
 precheck() {
-    log "1/5  Contrôle de santé du cluster (peer nodes)"
+    log "Contrôle de santé du cluster (peer nodes)"
     local bad=0
     while read -r -u 3 n; do
-        state="$("$CTDB_BIN" -n "$n" nodestatus | awk '{print $2}')"
+        # état extrait par mot-clé : robuste quel que soit le format de sortie
+        # (awk '{print $2}' risquait de renvoyer le PID, pas l'état)
+        state="$($CTDB_BIN -n "$n" nodestatus | grep -owE \
+            'OK|DISABLED|UNHEALTHY|BANNED|STOPPED|DISCONNECTED' | head -1)"
         if [ "$state" != "OK" ] && [ "$state" != "DISABLED" ]; then
             log "     NŒUD $n : état '$state' -> NON OK pour maintenance"
             bad=1
@@ -155,11 +168,11 @@ precheck() {
         fi
     done 3< <(get_other_nodes)
     [ "$bad" -eq 0 ] || die "un nœud peer n'est pas sain, ABORT"
-    log "     Ce nœud: état '$("$CTDB_BIN" nodestatus | awk '{print $2}')'"
+    log "     Ce nœud: état '$($CTDB_BIN nodestatus | grep -owE \
+        'OK|DISABLED|UNHEALTHY|BANNED|STOPPED|DISCONNECTED' | head -1)'"
 }
 
 do_drain() {
-    if ! mkdir "$(dirname "$LOCKFILE")" 2>/dev/null; true; fi
     if ! mkdir "$LOCKFILE" 2>/dev/null; then
         die "un drain est déjà en cours (lock: $LOCKFILE)"
     fi
@@ -167,10 +180,10 @@ do_drain() {
 
     precheck
 
-    log "2/5  Drain : ctdb disable -n $SELF_NODE"
+    log "1/4  Drain : ctdb disable -n $SELF_NODE"
     "$CTDB_BIN" disable -n "$SELF_NODE" || die "disable a échoué"
 
-    log "3/5  Attente libération des IP publiques (timeout ${DRAIN_TIMEOUT}s)"
+    log "2/4  Attente libération des IP publiques (timeout ${DRAIN_TIMEOUT}s)"
     elapsed=0
     while [ "$(local_vip_count)" -ne 0 ]; do
         sleep "$POLL"; elapsed=$((elapsed + POLL))
@@ -184,7 +197,7 @@ do_drain() {
     log "     0 VIP portée par ce nœud — distribution VIP:"
     "$CTDB_BIN" ip | sed 's/^/     /'
 
-    log "4/5  Attente fin des clients NFS (timeout ${CLIENT_TIMEOUT}s)"
+    log "3/4  Attente fin des clients NFS (timeout ${CLIENT_TIMEOUT}s)"
     elapsed=0
     while :; do
         c="$(nfs_client_count)"
@@ -203,7 +216,7 @@ do_drain() {
         log "     clients: $c, verrous v3: $v3 — attente (${elapsed}s)"
     done
 
-    log "5/5  Arrêt des services NFS locaux, le nœud est PASSIF"
+    log "4/4  Arrêt des services NFS locaux, le nœud est PASSIF"
     for svc in "${NFS_SERVICES[@]}"; do
         systemctl stop "$svc" 2>/dev/null && log "     stopped $svc" || log "     (skip) $svc"
     done
@@ -217,23 +230,29 @@ do_resume() {
     [ -f /var/run/ctdb-upgrade-drain.done ] \
         || die "pas de drain 'propre' détecté (/var/run/ctdb-upgrade-drain.done manquant)"
 
-    log "1/4  Redémarrage des services NFS (rpcbind d'abord)"
-    for svc in rpcbind nfs-server; do
+    log "1/5  Contrôle santé des peers (règle d'or : enable seulement si l'autre est OK)"
+    precheck
+
+    log "2/5  Redémarrage des services NFS (rpcbind d'abord)"
+    # ordre inverse du drain : on parcourt NFS_SERVICES à l'envers
+    for ((i=${#NFS_SERVICES[@]}-1; i>=0; i--)); do
+        svc="${NFS_SERVICES[i]}"
         systemctl start "$svc" && log "     started $svc" || die "start $svc a échoué"
     done
     rpcinfo -t localhost nfs 4 >/dev/null 2>&1 || die "nfs v4 ne répond pas sur localhost"
 
-    log "2/4  ctdb enable -n $SELF_NODE"
+    log "3/5  ctdb enable -n $SELF_NODE"
     "$CTDB_BIN" enable -n "$SELF_NODE" || die "ctdb enable a échoué"
 
-    log "3/4  Attente stabilité du cluster"
+    log "4/5  Attente stabilité du cluster"
     sleep 10
-    while [ "$("$CTDB_BIN" nodestatus | awk '{print $2}')" != "OK" ]; do
+    while [ "$($CTDB_BIN nodestatus | grep -owE \
+        'OK|DISABLED|UNHEALTHY|BANNED|STOPPED|DISCONNECTED' | head -1)" != "OK" ]; do
         sleep 5; log "     nœud pas encore OK, attente..."
     done
     "$CTDB_BIN" -n all status | sed 's/^/     /'
 
-    log "4/4  Distribution des VIP après takeover"
+    log "5/5  Distribution des VIP après takeover"
     "$CTDB_BIN" ip | sed 's/^/     /'
     rm -f /var/run/ctdb-upgrade-drain.done
 
@@ -241,7 +260,9 @@ do_resume() {
 }
 
 usage() {
-    sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'
+    # Affiche le bloc de commentaires d'en-tête — robuste aux éditions du script
+    # (un sed '2,32p' fixe cassait au moindre ajout de ligne)
+    awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0"
     exit 1
 }
 
@@ -265,11 +286,12 @@ esac
 
 ```
 nfs-ctdb-upgrade/
-├── inventory.yaml            # [nfs_cluster] node1 node2
+├── inventory.ini             # [nfs_cluster] node1 node2 (syntaxe INI)
 ├── playbook.yaml
 └── roles/ctdb-rolling-upgrade/
     ├── defaults/main.yaml
     └── tasks/
+        ├── main.yaml
         ├── precheck.yaml
         ├── drain.yaml
         ├── upgrade.yaml
@@ -277,7 +299,7 @@ nfs-ctdb-upgrade/
         └── verify.yaml
 ```
 
-### `inventory.yaml`
+### `inventory.ini`
 
 ```ini
 [nfs_cluster]
@@ -325,6 +347,30 @@ verify_host: "10.0.0.200"       # une VIP de test
 verify_export: "/export/data"
 ```
 
+### `tasks/main.yaml`
+
+```yaml
+---
+- name: Pré-vérifications cluster
+  ansible.builtin.include_tasks: precheck.yaml
+
+- name: Drain du nœud (disable + attente clients)
+  ansible.builtin.include_tasks: drain.yaml
+
+- name: Upgrade paquets + reboot éventuel
+  ansible.builtin.include_tasks: upgrade.yaml
+
+- name: Reprise de service
+  ansible.builtin.include_tasks: resume.yaml
+
+- name: Vérification finale
+  ansible.builtin.include_tasks: verify.yaml
+```
+
+> `include_tasks` plutôt qu'`import_tasks` : chaque phase est un bloc log ;
+> avec `serial: 1` + `any_errors_fatal`, un include au milieu de la boucle garde
+> le comportement d'abort par hôte voulu.
+
 ### `tasks/precheck.yaml`
 
 ```yaml
@@ -334,16 +380,15 @@ verify_export: "/export/data"
   register: ctdb_status_all
   changed_when: false
 
-- name: Vérifier qu'aucun peer n'est UNHEALTHY / BANNED / STOPPED / DISCONNECTED
-  vars:
-    peers: >-
-      {{ ctdb_status_all.stdout.split('\n')
-         | select('match', '^[0-9]+:') | list }}
+- name: Vérifier qu'aucun nœud n'est dans un état non sain
+  # Recherche texte sur la sortie complète : robuste quel que soit le format
+  # de sortie de ctdb (pnn:0 ou 0:). DISABLED n'est PAS interdit
+  # (idempotence : rerun possible sur un nœud déjà drainé).
   ansible.builtin.assert:
     that:
-      - peers | reject('search', item) | length == 0
-    fail_msg: "Peer non sain détecté — ABORT :\n{{ ctdb_status_all.stdout }}"
-  with_items:
+      - ctdb_status_all.stdout is not search(item)
+    fail_msg: "État '{{ item }}' détecté — ABORT :\n{{ ctdb_status_all.stdout }}"
+  loop:
     - 'UNHEALTHY'
     - 'DISCONNECTED'
     - 'BANNED'
@@ -364,19 +409,23 @@ verify_export: "/export/data"
   ansible.builtin.command: ctdb disable
   when: already_drained.stdout == "no"
 
-- name: Attendre 0 VIP portée par le nœud
+- name: Attendre 0 VIP portée par le nœud (timeout drain_timeout)
+  # pnn local via le marqueur THIS NODE (stable toutes versions de ctdb),
+  # puis comparaison pnn ↔ pnn — JAMAIS pnn ↔ adresse IP.
+  # Pas de until/retries : un seul timeout, piloté par {{ drain_timeout }}.
   ansible.builtin.shell: |
-    for i in $(seq 1 60); do
-      c=$(ctdb ip | awk -v me="$(hostname -I | awk '{print $1}')" \
-          '{ n = $NF; sub(":","",n); if (n == me) c++ } END { print c+0 }')
+    me="$(ctdb nodestatus | grep 'THIS NODE' | awk '{sub(":","",$1); print $1}')"
+    [ -n "$me" ] || { echo "pnn local introuvable (pas de marqueur THIS NODE)"; exit 1; }
+    end=$(( $(date +%s) + {{ drain_timeout }} ))
+    while [ "$(date +%s)" -lt "$end" ]; do
+      c=$(ctdb ip | awk -v me="$me" \
+          '{ n = $NF; sub(":","",n); sub(/^node\[/,"",n); sub(/\]$/,"",n);
+             if (n == me) c++ } END { print c+0 }')
       [ "$c" -eq 0 ] && exit 0
-      sleep 5
+      sleep {{ poll_interval }}
     done
     echo "VIP encore portées:"; ctdb ip; exit 1
   register: drain_vip
-  until: drain_vip.rc == 0
-  retries: 3
-  delay: 10
   changed_when: false
 
 - name: Attendre zéro client NFS et zéro verrou v3
@@ -386,7 +435,7 @@ verify_export: "/export/data"
       if [ -d /proc/fs/nfsd/clients ]; then
         c=$(find /proc/fs/nfsd/clients -mindepth 1 -maxdepth 1 -type d | wc -l)
       else
-        c=$(ss -tH state established '( sport = :2049 )' 2>/dev/null | wc -l)
+        c=$(ss -tH state established '( sport = :2049 or dport = :2049 )' 2>/dev/null | wc -l)
       fi
       v=$(find /var/lib/nfs/sm -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)
       [ "$c" -eq 0 ] && [ "$v" -eq 0 ] && exit 0
@@ -415,6 +464,8 @@ verify_export: "/export/data"
     mode: '0644'
 
 - name: Mettre à jour les paquets OS
+  # 'name: "*"' fonctionne avec dnf/yum (RHEL-like).
+  # Sur Debian : remplacer par le module apt avec "upgrade: dist".
   ansible.builtin.package:
     name: '*'
     state: latest
@@ -425,7 +476,11 @@ verify_export: "/export/data"
     if command -v needs-restarting >/dev/null; then
       needs-restarting -r >/dev/null 2>&1 && echo no || echo yes
     else
-      rpm -q kernel | grep -q "$(uname -r)" && echo no || echo yes
+      # fallback : le kernel EN COURS doit être le plus RÉCENT installé.
+      # (l'ancien kernel reste installé — un simple grep "$(uname -r)"
+      #  matcherait toujours et ne détecterait jamais le reboot)
+      latest="$(rpm -q kernel | sort -V | tail -1 | sed 's/^kernel-//')"
+      [ "$(uname -r)" = "$latest" ] && echo no || echo yes
     fi
   register: needs_reboot
   changed_when: false
@@ -444,6 +499,24 @@ On ne réactive RIEN automatiquement avant `resume`.
 
 ```yaml
 ---
+- name: Contrôle santé des peers avant enable
+  # Règle d'or (§2/§6) : on ne réactive QUE si l'autre nœud est sain.
+  # DISABLED (soi-même) n'est pas interdit.
+  ansible.builtin.command: ctdb -n all status
+  register: ctdb_status_all_resume
+  changed_when: false
+
+- name: Refuser l'enable si un nœud est dans un état non sain
+  ansible.builtin.assert:
+    that:
+      - ctdb_status_all_resume.stdout is not search(item)
+    fail_msg: "Peer non sain — enable refusé :\n{{ ctdb_status_all_resume.stdout }}"
+  loop:
+    - 'UNHEALTHY'
+    - 'DISCONNECTED'
+    - 'BANNED'
+    - 'STOPPED'
+
 - name: Démarrer les services NFS (rpcbind d'abord)
   ansible.builtin.systemd:
     name: "{{ item }}"
@@ -472,7 +545,8 @@ On ne réactive RIEN automatiquement avant `resume`.
   changed_when: false
 
 - name: Rapport — état cluster + distribution VIP
-  ansible.builtin.command: "ctdb -n all status && ctdb ip"
+  # shell (pas command) : "&&" exige un shell
+  ansible.builtin.shell: "ctdb -n all status && ctdb ip"
   register: report
   changed_when: false
 
@@ -499,6 +573,11 @@ On ne réactive RIEN automatiquement avant `resume`.
     msg: "Nœud {{ ansible_host }} upgrade OK, réintégré au cluster."
 ```
 
+> ⚠️ Ce test tourne **sur le nœud upgradé lui-même** : s'il a déjà repris une VIP,
+> le montage peut être servi localement et ne teste pas la bascule. Pour un vrai
+> test de reprise, l'exécuter depuis une machine témoin
+> (`delegate_to: <client-témoin>` sur la tâche de montage), cf. §6.
+
 ---
 
 ## 5. Intégration AWX
@@ -510,6 +589,8 @@ On ne réactive RIEN automatiquement avant `resume`.
      - `upgrade_confirm` — checkbox obligatoire ("J'ai validé le runbook de maintenance")
      - optionnel : `drain_timeout`, `client_timeout`
    - **Credentials machine** + `become`.
+   - **Concurrency limit : 1** — sinon deux jobs lancés en parallèle draineraient
+     les 2 nœuds en même temps (`serial: 1` ne protège qu'à l'intérieur d'UN job).
 3. **Workflow** recommandé :
 
 ```
