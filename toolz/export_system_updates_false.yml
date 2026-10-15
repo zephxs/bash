@@ -14,7 +14,7 @@
       when: >-
         export_var in hostvars[item]
         and hostvars[item][export_var] | bool == false
-      loop: "{{ groups['all'] }}"
+      loop: "{{ groups['all'] | difference(['localhost']) }}"
 
     - name: Résumé
       ansible.builtin.debug:
@@ -25,15 +25,3 @@
         data:
           disabled_hosts: "{{ disabled_hosts | default([]) }}"
           disabled_count: "{{ (disabled_hosts | default([])) | length }}"
-
-    - name: Fichier lisible (dans l'Execution Environment / artifact)
-      ansible.builtin.copy:
-        content: |
-          # Hosts avec {{ export_var }}=false — généré le {{ now(utc=true, fmt='%Y-%m-%d %H:%M UTC') }}
-          {% for h in disabled_hosts | default([]) %}
-          - {{ h }} (groups: {{ hostvars[h].group_names | join(',') }})
-          {%- else %}
-          (aucun)
-          {% endfor %}
-        dest: "{{ playbook_dir }}/{{ export_var }}_false_hosts.yaml"
-      changed_when: false
