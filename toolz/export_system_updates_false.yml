@@ -1,0 +1,39 @@
+---
+- name: Export mensuel des hosts avec system_updates=false
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    export_var: "system_updates"      # nom de la variable à tester
+
+  tasks:
+    - name: Construire la liste des hosts où {{ export_var }} est false (après precedence host/group)
+      ansible.builtin.set_fact:
+        disabled_hosts: "{{ (disabled_hosts | default([])) + [item] }}"
+      when: >-
+        export_var in hostvars[item]
+        and hostvars[item][export_var] | bool == false
+      loop: "{{ groups['all'] }}"
+
+    - name: Résumé
+      ansible.builtin.debug:
+        msg: "Hosts avec {{ export_var }}=false : {{ disabled_hosts | default([]) | join(', ') or '(aucun)' }}"
+
+    - name: Export du résultat comme artifact du job AWX
+      ansible.builtin.set_stats:
+        data:
+          disabled_hosts: "{{ disabled_hosts | default([]) }}"
+          disabled_count: "{{ (disabled_hosts | default([])) | length }}"
+
+    - name: Fichier lisible (dans l'Execution Environment / artifact)
+      ansible.builtin.copy:
+        content: |
+          # Hosts avec {{ export_var }}=false — généré le {{ now(utc=true, fmt='%Y-%m-%d %H:%M UTC') }}
+          {% for h in disabled_hosts | default([]) %}
+          - {{ h }} (groups: {{ hostvars[h].group_names | join(',') }})
+          {%- else %}
+          (aucun)
+          {% endfor %}
+        dest: "{{ playbook_dir }}/{{ export_var }}_false_hosts.yaml"
+      changed_when: false
