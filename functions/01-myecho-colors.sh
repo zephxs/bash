@@ -1,4 +1,11 @@
 ### colors
+# Garde shell : tout le reste du fichier utilise des bashismes (arrays, (( )), ${var:0:1}, read -rsn).
+# Sans cette garde, dash/ash/busybox avortent le source avec une syntax error en plein milieu.
+if [ -z "$BASH_VERSION" ]; then
+  echo "01-myecho-colors.sh: bash requis (a sourcer depuis .bashrc, pas depuis sh/dash)" >&2
+  return 0 2>/dev/null || exit 0
+fi
+
 export _REZ='\e[0m'
 export _BLK='\033[5m'
 export _RDX='\e[1;31m'
@@ -25,6 +32,38 @@ get_cols () {
   [ "${c:-0}" -gt 0 ] 2>/dev/null || c=$(( stty size </dev/tty ) 2>/dev/null | awk '{print $2}')
   [ -n "${c:-}" ] && [ "${c:-0}" -gt 0 ] 2>/dev/null || c=80
   echo "$c"
+}
+
+# --- Menu frame helpers (remontees depuis _MYECHO : definies une seule fois au chargement)
+# Depend des locals de _MYECHO via le scoping dynamique bash : _OPTS, _SEL, _MAXW,
+# _LINELENGH, _COLOR, _MENU_TTY, _FIRST, _MENULINES
+_MENU_TTY='/dev/tty'
+_MENU_BORDER () {
+  local _N=0
+  while [ "$_N" -lt "$_LINELENGH" ]; do
+    printf "${_COLOR}#${_REZ}" > "$_MENU_TTY"
+    _N=$((_N+1))
+  done
+  printf '\n' > "$_MENU_TTY"
+}
+_MENU_DRAW () {
+  # Erase previous frame: cursor up N lines + clear to end of screen (no inline save/restore)
+  if [ -z "$_FIRST" ]; then
+    printf '\033[%dA\033[J' "$_MENULINES" > "$_MENU_TTY"
+  fi
+  _FIRST=''
+  _MENU_BORDER
+  local _I=0
+  while [ "$_I" -lt ${#_OPTS[@]} ]; do
+    if [ "$_I" -eq "$_SEL" ]; then
+      printf "${_COLOR}#${_REZ} ${_YLX}> %-${_MAXW}s \n" "${_OPTS[$_I]}" > "$_MENU_TTY"
+    else
+      printf "${_COLOR}#${_REZ}   ${_ORX}%-${_MAXW}s \n" "${_OPTS[$_I]}" > "$_MENU_TTY"
+    fi
+    _I=$((_I+1))
+  done
+  _MENU_BORDER
+  printf "${_COLOR}# ${_REZ}${_COLOR}↑↓ naviguer • Enter valider • Esc annuler${_REZ}\n" > "$_MENU_TTY"
 }
 
 
@@ -251,33 +290,6 @@ case "${_TAG}" in
     local _MENULINES=$(( ${#_OPTS[@]} + 3 ))
     local _FIRST=1
     _MENU_TTY='/dev/tty'
-    _MENU_BORDER () {
-      local _N=0
-      while [ "$_N" -lt "$_LINELENGH" ]; do
-        printf "${_COLOR}#${_REZ}" > "$_MENU_TTY"
-        _N=$((_N+1))
-      done
-      printf '\n' > "$_MENU_TTY"
-    }
-    _MENU_DRAW () {
-      # Erase previous frame: cursor up N lines + clear to end of screen (no inline save/restore)
-      if [ -z "$_FIRST" ]; then
-        printf '\033[%dA\033[J' "$_MENULINES" > "$_MENU_TTY"
-      fi
-      _FIRST=''
-      _MENU_BORDER
-      local _I=0
-      while [ "$_I" -lt ${#_OPTS[@]} ]; do
-        if [ "$_I" -eq "$_SEL" ]; then
-          printf "${_COLOR}#${_REZ} ${_YLX}> %-${_MAXW}s \n" "${_OPTS[$_I]}" > "$_MENU_TTY"
-        else
-          printf "${_COLOR}#${_REZ}   ${_ORX}%-${_MAXW}s \n" "${_OPTS[$_I]}" > "$_MENU_TTY"
-        fi
-        _I=$((_I+1))
-      done
-      _MENU_BORDER
-      printf "${_COLOR}# ${_REZ}${_COLOR}↑↓ naviguer • Enter valider • Esc annuler${_REZ}\n" > "$_MENU_TTY"
-    }
     while true; do
       _MENU_DRAW
       read -rsn1 _KEY < "$_MENU_TTY"
