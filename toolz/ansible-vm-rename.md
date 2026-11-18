@@ -335,3 +335,148 @@ Tu peux extraire le script Python dans un fichier `rename_host.py` et l’appele
 
 **Tu veux que je te donne aussi la version qui gère le renommage des fichiers `host_vars/` en même temps ?**
 Ou tu préfères une version qui ne touche que l’inventaire principal ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Final:
+Oui. Voici la version complète qui gère **à la fois** :
+
+- Le renommage dans l’inventaire YAML
+- Le renommage des fichiers/dossiers `host_vars/`
+
+```yaml
+---
+- name: Renommage inventaire YAML + host_vars + hostname machine
+  hosts: localhost
+  gather_facts: false
+  vars:
+    inventory_file: "./inventory.yml"
+    host_vars_dir: "./host_vars"               # dossier host_vars
+    old_hostname: "old-vm-01"
+    new_hostname: "new-vm-01"
+
+  tasks:
+    - name: Backup de l'inventaire
+      ansible.builtin.copy:
+        src: "{{ inventory_file }}"
+        dest: "{{ inventory_file }}.bak.{{ ansible_date_time.epoch }}"
+        remote_src: true
+        mode: preserve
+
+    - name: Renommer l'hôte dans l'inventaire YAML + host_vars
+      ansible.builtin.shell: |
+        python3 << 'EOF'
+        import yaml
+        import os
+        import shutil
+        from pathlib import Path
+
+        inventory_file = "{{ inventory_file }}"
+        host_vars_dir = "{{ host_vars_dir }}"
+        old = "{{ old_hostname }}"
+        new = "{{ new_hostname }}"
+
+        # --- 1. Renommage dans l'inventaire YAML ---
+        with open(inventory_file, "r") as f:
+            data = yaml.safe_load(f)
+
+        def rename_host(obj):
+            if isinstance(obj, dict):
+                if "hosts" in obj and isinstance(obj["hosts"], dict):
+                    if old in obj["hosts"]:
+                        obj["hosts"][new] = obj["hosts"].pop(old)
+                        print(f"Inventaire : renommé {old} → {new}")
+                for k, v in list(obj.items()):
+                    rename_host(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    rename_host(item)
+
+        rename_host(data)
+
+        with open(inventory_file, "w") as f:
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+        # --- 2. Renommage dans host_vars ---
+        hv_path = Path(host_vars_dir)
+        if not hv_path.exists():
+            print("Aucun dossier host_vars trouvé, on passe.")
+            exit(0)
+
+        # Cas 1 : host_vars/old-hostname.yml
+        old_file = hv_path / f"{old}.yml"
+        old_file_yaml = hv_path / f"{old}.yaml"
+        new_file = hv_path / f"{new}.yml"
+
+        if old_file.exists():
+            shutil.move(str(old_file), str(new_file))
+            print(f"host_vars : {old}.yml → {new}.yml")
+        elif old_file_yaml.exists():
+            shutil.move(str(old_file_yaml), str(hv_path / f"{new}.yaml"))
+            print(f"host_vars : {old}.yaml → {new}.yaml")
+
+        # Cas 2 : dossier host_vars/old-hostname/
+        old_dir = hv_path / old
+        new_dir = hv_path / new
+        if old_dir.is_dir():
+            shutil.move(str(old_dir), str(new_dir))
+            print(f"host_vars : dossier {old}/ → {new}/")
+
+        print("Renommage terminé.")
+        EOF
+      args:
+        executable: /bin/bash
+      register: rename_result
+      changed_when: true
+
+    - name: Afficher le résultat
+      ansible.builtin.debug:
+        msg: "{{ rename_result.stdout_lines }}"
+
+# --- Optionnel : appliquer le hostname sur la machine ---
+# (à lancer après rechargement de l'inventaire)
+# - name: Aligner le hostname OS
+#   hosts: "{{ new_hostname }}"
+#   become: true
+#   tasks:
+#     - ansible.builtin.hostname:
+#         name: "{{ inventory_hostname_short }}"
+#         use: systemd
+```
+
+### Ce que ça gère
+
+| Élément | Action |
+|---------|--------|
+| Inventaire YAML | Renomme le host dans toutes les sections `hosts:` (récursif) |
+| `host_vars/old.yml` | Renommé en `host_vars/new.yml` |
+| `host_vars/old.yaml` | Renommé en `host_vars/new.yaml` |
+| `host_vars/old/` (dossier) | Renommé en `host_vars/new/` |
+| Backup | Fichier `.bak` de l’inventaire avant modification |
+
+### Utilisation
+
+```bash
+ansible-playbook rename-inventory.yml \
+  -e "old_hostname=old-vm-01 new_hostname=new-vm-01 \
+      inventory_file=./hosts.yml \
+      host_vars_dir=./host_vars"
+```
+
+### Remarques importantes
+
+- Le script ne modifie **pas** le contenu des fichiers `host_vars` (uniquement le nom du fichier/dossier). Si tu as des références au vieux hostname à l’intérieur des fichiers, il faudra les traiter séparément.
+- Si tu as des `group_vars` ou d’autres fichiers qui référencent le hostname, ils ne sont pas touchés.
+- Toujours tester sur une copie avant de lancer en prod.
+
+Tu veux aussi que le script cherche et remplace les occurrences de l’ancien hostname **à l’intérieur** des fichiers `host_vars` ? Ou c’est suffisant comme ça ?
