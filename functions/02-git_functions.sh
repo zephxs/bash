@@ -1,7 +1,11 @@
 #############################################################
 ### Git functions
-#
+# Alias
+alias gitl='git pull'
+alias gitst='git status'
+alias gits='git switch'
 
+# Functions
 _REPOROOTFIND () {
 ### 1.1 - function to search for all repositories to sync
 # will create ~/.reporoot file to base future sync on
@@ -159,3 +163,4 @@ if [ -n "$_BAKREP" ]; then
   [ "$_ORIGREP" = "$_BAKREP" ] || repsync
 fi
 }
+
